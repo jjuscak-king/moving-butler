@@ -7,9 +7,11 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { updateStageStatus } from "@/app/actions/stages";
-import { deleteTask, updateTaskStatus } from "@/app/actions/tasks";
+import { claimTask, deleteTask, unclaimTask, updateTaskStatus } from "@/app/actions/tasks";
 import { DeleteMoveButton } from "@/components/delete-move-button";
 import { NativeSelect } from "@/components/field";
+import { HouseholdPanel } from "@/components/household-panel";
+import { NycConstraintBanner } from "@/components/nyc-constraint-banner";
 import { TaskDialog } from "@/components/task-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,23 +40,42 @@ import {
   type StageStatus,
   type TaskStatus,
 } from "@/lib/constants";
-import type { MoveRow, MoveStageRow, TaskRow } from "@/lib/database.types";
-import { formatMoveWindow } from "@/lib/format";
+import type { MoveMemberRow, MoveRow, MoveStageRow, TaskRow } from "@/lib/database.types";
+import { formatMoveDate, formatMoveWindow } from "@/lib/format";
+import {
+  dependencyTitle,
+  isDueToday,
+  isTaskOverdue,
+  isTaskSoftBlocked,
+} from "@/lib/task-state";
 import { cn } from "@/lib/utils";
 
 function isStageKey(value: string | undefined): value is StageKey {
   return !!value && STAGE_KEYS.includes(value as StageKey);
 }
 
+function memberLabel(userId: string | null, members: MoveMemberRow[]) {
+  if (!userId) return null;
+  return members.find((member) => member.user_id === userId)?.email ?? "Co-mover";
+}
+
 export function MoveWorkspace({
   move,
   stages,
   tasks,
+  members,
+  currentUserId,
+  isOwner,
+  remindersEnabled,
   initialStage,
 }: {
   move: MoveRow;
   stages: MoveStageRow[];
   tasks: TaskRow[];
+  members: MoveMemberRow[];
+  currentUserId: string;
+  isOwner: boolean;
+  remindersEnabled: boolean;
   initialStage?: string;
 }) {
   const router = useRouter();
@@ -99,17 +120,21 @@ export function MoveWorkspace({
               {formatMoveWindow(move.window_start, move.window_end)}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              nativeButton={false}
-              variant="outline"
-              className="h-10"
-              render={<Link href={`/moves/${move.id}/edit`} />}
-            >
-              Edit {CASE_FILE_LABEL_SHORT}
-            </Button>
-            <DeleteMoveButton moveId={move.id} label={move.label} />
-          </div>
+          {isOwner ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                nativeButton={false}
+                variant="outline"
+                className="h-10"
+                render={<Link href={`/moves/${move.id}/edit`} />}
+              >
+                Edit {CASE_FILE_LABEL_SHORT}
+              </Button>
+              <DeleteMoveButton moveId={move.id} label={move.label} />
+            </div>
+          ) : (
+            <Badge variant="secondary">Co-mover</Badge>
+          )}
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
           <Badge variant="secondary">{HOME_SIZE_LABELS[move.home_size]}</Badge>
@@ -139,9 +164,18 @@ export function MoveWorkspace({
         ) : null}
       </section>
 
+      <NycConstraintBanner move={move} />
+
+      <HouseholdPanel
+        moveId={move.id}
+        members={members}
+        isOwner={isOwner}
+        remindersEnabled={remindersEnabled}
+      />
+
       <section className="grid gap-3">
         <div>
-          <h2 className="font-heading text-xl">Journey stages (L3)</h2>
+          <h2 className="font-heading text-xl">Journey stages</h2>
           <p className="text-sm text-muted-foreground">
             Customer Services path — Decide through Settle. Tap a stage to focus
             its checklist.
@@ -237,68 +271,119 @@ export function MoveWorkspace({
           </p>
         ) : (
           <ul className="grid gap-2">
-            {focusedTasks.map((task) => (
-              <li
-                key={task.id}
-                className={cn(
-                  "rounded-xl border bg-background p-3",
-                  task.status === "blocked" &&
-                    "border-amber-400 bg-amber-50 shadow-[inset_4px_0_0_0_rgb(245_158_11)]"
-                )}
-              >
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium leading-snug">{task.title}</p>
-                      {task.notes ? (
-                        <p className="mt-1 text-sm text-muted-foreground">{task.notes}</p>
-                      ) : null}
+            {focusedTasks.map((task) => {
+              const waitingOn = isTaskSoftBlocked(task.depends_on_task_id, tasks);
+              const overdue = isTaskOverdue(task.due_date, task.status);
+              const dueToday = isDueToday(task.due_date, task.status);
+              const claimedLabel = memberLabel(task.claimed_by, members);
+              const claimedByMe = task.claimed_by === currentUserId;
+              return (
+                <li
+                  key={task.id}
+                  className={cn(
+                    "rounded-xl border bg-background p-3",
+                    (task.status === "blocked" || waitingOn) &&
+                      "border-amber-400 bg-amber-50 shadow-[inset_4px_0_0_0_rgb(245_158_11)]",
+                    overdue && "border-destructive/40"
+                  )}
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-medium leading-snug">{task.title}</p>
+                        {task.notes ? (
+                          <p className="mt-1 text-sm text-muted-foreground">{task.notes}</p>
+                        ) : null}
+                        {waitingOn ? (
+                          <p className="mt-1 text-sm text-amber-800">
+                            Blocked by “{dependencyTitle(task.depends_on_task_id, tasks) ?? "another task"}”
+                          </p>
+                        ) : null}
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {task.due_date ? `Due ${formatMoveDate(task.due_date)}` : "No due date"}
+                          {claimedLabel ? ` · Claimed by ${claimedByMe ? "you" : claimedLabel}` : " · Unclaimed"}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        {task.is_optional ? <Badge variant="outline">Optional</Badge> : null}
+                        {overdue ? <Badge variant="destructive">Overdue</Badge> : null}
+                        {dueToday ? <Badge variant="secondary">Due today</Badge> : null}
+                      </div>
                     </div>
-                    {task.is_optional ? <Badge variant="outline">Optional</Badge> : null}
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <NativeSelect
-                      aria-label={`Status for ${task.title}`}
-                      value={task.status}
-                      className="sm:max-w-44"
-                      onChange={(event) => {
-                        const status = event.target.value as TaskStatus;
-                        if (!TASK_STATUSES.includes(status)) return;
-                        startTransition(async () => {
-                          const result = await updateTaskStatus(move.id, task.id, status);
-                          if (result.error) toast.error(result.error);
-                        });
-                      }}
-                    >
-                      {TASK_STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {TASK_STATUS_LABELS[status]}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        className="h-11 flex-1 sm:h-10 sm:flex-none"
-                        onClick={() => {
-                          setEditing(task);
-                          setTaskOpen(true);
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <NativeSelect
+                        aria-label={`Status for ${task.title}`}
+                        value={task.status}
+                        className="sm:max-w-44"
+                        onChange={(event) => {
+                          const status = event.target.value as TaskStatus;
+                          if (!TASK_STATUSES.includes(status)) return;
+                          startTransition(async () => {
+                            const result = await updateTaskStatus(move.id, task.id, status);
+                            if (result.error) toast.error(result.error);
+                          });
                         }}
                       >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        className="h-11 flex-1 sm:h-10 sm:flex-none"
-                        onClick={() => setPendingDelete(task)}
-                      >
-                        Delete
-                      </Button>
+                        {TASK_STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {TASK_STATUS_LABELS[status]}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                      <div className="flex flex-wrap gap-2">
+                        {claimedByMe ? (
+                          <Button
+                            variant="outline"
+                            className="h-11 flex-1 sm:h-10 sm:flex-none"
+                            onClick={() => {
+                              startTransition(async () => {
+                                const result = await unclaimTask(move.id, task.id);
+                                if (result.error) toast.error(result.error);
+                              });
+                            }}
+                          >
+                            Release
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            className="h-11 flex-1 sm:h-10 sm:flex-none"
+                            onClick={() => {
+                              startTransition(async () => {
+                                const result = await claimTask(move.id, task.id);
+                                if (result.error) toast.error(result.error);
+                                else toast.success("Task claimed");
+                              });
+                            }}
+                          >
+                            Claim
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          className="h-11 flex-1 sm:h-10 sm:flex-none"
+                          onClick={() => {
+                            setEditing(task);
+                            setTaskOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        {isOwner ? (
+                          <Button
+                            variant="destructive"
+                            className="h-11 flex-1 sm:h-10 sm:flex-none"
+                            onClick={() => setPendingDelete(task)}
+                          >
+                            Delete
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -312,6 +397,7 @@ export function MoveWorkspace({
         moveId={move.id}
         defaultStage={selected}
         task={editing}
+        allTasks={tasks}
       />
 
       <Dialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>

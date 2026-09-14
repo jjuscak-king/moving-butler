@@ -16,7 +16,7 @@ v1 has **three** architecture levels. Journey stages are a path *through* L3, no
 | **L2** | Relocation Operating System | Relocation Case File and the operating record of the move |
 | **L3** | Customer Services | Journey stages as a path through L3: Decide → Plan → Vendors → Admin → Move day → Settle |
 
-Week 1 ships a thin slice of all three: auth (L1) + Case File create/edit (L2) + six L3 stages with checklist execution. **No marketplace.**
+Week 1 ships a thin slice of all three: auth (L1) + Case File create/edit (L2) + six L3 stages with checklist execution. Week 2 stays on that CORE: due dates, simple dependencies, email reminders, co-mover membership. **No marketplace.**
 
 Provisional strategy: NYC metro · B2C · SaaS spine · later “I booked this” vendor capture.
 
@@ -56,13 +56,15 @@ NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_or_publishable_key
 ```
 
-A service-role key is **not** required. The app uses the user JWT + RLS.
+A service-role key is **not** required for day-to-day use. The app uses the user JWT + RLS. Week 2’s unattended reminder cron does need a service-role key (see below).
 
-### 3. Apply the migration
+### 3. Apply the migrations
 
 SQL Editor → New query → paste `supabase/migrations/0001_init.sql` → Run.
 
-That creates `profiles`, `moves`, `move_stages`, `tasks`, RLS policies, and a trigger that seeds the six stages plus the NYC checklist whenever a move is inserted.
+Then paste `supabase/migrations/0002_week2.sql` → Run.
+
+`0001` creates `profiles`, `moves`, `move_stages`, `tasks`, RLS, and the seed trigger. `0002` adds due dates, simple `depends_on`, move membership / invite links, and extends the NYC constraint pack (COI, elevator, loading dock, parking). Existing Case Files are backfilled.
 
 Optional CLI (if you use the Supabase CLI against this project):
 
@@ -96,30 +98,73 @@ npm run build
 
 1. Import the GitHub repo into Vercel.
 2. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-3. Optional: `NEXT_PUBLIC_SITE_URL` = your production origin (used for email confirm redirects).
-4. In Supabase Auth, add the Vercel URL to **Redirect URLs** (`https://YOUR_DOMAIN/auth/confirm`).
+3. Optional: `NEXT_PUBLIC_SITE_URL` = your production origin (used for email confirm redirects and invite links).
+4. For due-task emails: `RESEND_API_KEY`, optional `RESEND_FROM_EMAIL`, `CRON_SECRET`, and `SUPABASE_SERVICE_ROLE_KEY`.
+5. In Supabase Auth, add the Vercel URL to **Redirect URLs** (`https://YOUR_DOMAIN/auth/confirm`).
 
 ## What Week 1 includes
 
 - Relocation Case File: create / edit / delete (label, from/to address + borough, date window with end ≥ start, home size, access, COI, DIY vs full-service, optional notes)
 - Case File list (including a single card) and empty state **Create your first Case File**
-- Fixed six L3 journey stages; manual status: Not started | In progress | Blocked | Done
+- Fixed six journey stages; manual status: Not started | In progress | Blocked | Done
 - Selecting a stage focuses that stage’s checklist
 - Seeded tasks (≥1 per stage, fuller NYC Admin cluster). COI and elevator tasks always appear and are marked optional
 - Task CRUD with confirm-on-delete; Blocked is visually distinct
 - Mobile-first (~375px) tap targets
 
+## What Week 2 includes
+
+- Optional **due dates** on tasks (date-only, labeled in America/New_York), with overdue / due-today flags
+- **Simple dependencies** (`depends_on_task_id`): one task can wait on another. Seed wires **Request COI if needed** before Move-day critical tasks. Soft-block UI + “Blocked by …” warning — not a hard lock or critical-path engine
+- **Email reminders** via **Resend** only (no push). Due today or overdue; once per task per NYC calendar day; owner and the claimant if the task is claimed. Per-user enable/disable pref. Soft-fails if `RESEND_API_KEY` is missing
+- **Co-mover invite**: owner copies a link; invitee signs up or signs in and joins the Case File. Members can view, claim, and complete tasks. RLS is membership, not owner-only
+- Approval rule: Case File edit/delete, invite creation, and task delete stay **owner-only** (money / legal / irreversible)
+- NYC constraint pack: in-app banner plus seed tasks for COI, elevator, loading dock, parking notes
+
+## Week 2 setup (email + cron)
+
+Pick **one** channel: email. This repo uses [Resend](https://resend.com).
+
+1. Create a Resend account and API key.
+2. For the fastest dogfood loop, send from Resend’s onboarding address (`beth.t@example.com`) to the inbox you used to sign up for Resend. For production, verify a domain and set `RESEND_FROM_EMAIL`.
+3. Add to `.env.local` / Vercel:
+
+```bash
+RESEND_API_KEY=re_xxxxxxxxx
+# Optional. Defaults to Moving Butler <beth.t@example.com>
+RESEND_FROM_EMAIL=Moving Butler <butler@YOUR_DOMAIN>
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Unattended daily cron (Vercel Cron hits GET /api/cron/task-reminders at 13:00 UTC)
+CRON_SECRET=generate-a-long-random-string
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+Project Settings → API in Supabase: copy the **service_role** key only for this cron. Do not expose it to the browser.
+
+**Dogfood without waiting for cron:** on a Case File you own, use **Email due reminders**. That sends for that Case File using your session (no service-role key). Tasks need a due date of today or earlier. Scheduled cron mail goes to the owner and the claimant; toggle “Email me when a task is due” off to skip the daily job for your inbox. Missing `RESEND_API_KEY` is a soft skip, not a crash.
+
+**Local cron-shaped check:**
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/task-reminders
+```
+
+On Vercel, `vercel.json` registers a daily GET to that path. Set the same `CRON_SECRET` in the project env; Vercel sends `Authorization: Bearer $CRON_SECRET`. Hobby plans support a daily cron. This is not push notifications.
+
 ## Out of scope (not in this repo)
 
-Co-mover invites, due dates/dependencies/reminders, vendor capture or marketplace, Admin curated packs beyond the seed, Move-day/Settle special UIs, subscription/paywall, native apps, OAuth.
+Vendor capture or marketplace, Week 3 Admin packs / Move-day runbook, Week 4 paywall, native apps, OAuth, push notifications, renaming `/moves` routes.
 
 ## Data model
 
 | Table | RLS |
 | --- | --- |
 | `profiles` | `id = auth.uid()` |
-| `moves` | `user_id = auth.uid()` |
-| `move_stages` | via owning move |
-| `tasks` | via owning move |
+| `moves` | select: members of the move; insert/update/delete: owner (`user_id`) |
+| `move_members` | select: members of the move (writes via owner trigger / invite RPC) |
+| `move_invites` | owner of the move |
+| `move_stages` | select/update: members; insert/delete: owner |
+| `tasks` | select/insert/update: members; delete: owner |
 
-Users only read/write their own moves and related rows. Table names stay `moves*` (URLs `/moves`); the product noun is Relocation Case File.
+`tasks.due_date` is optional. `tasks.depends_on_task_id` is a single same-Case-File dependency. Table names stay `moves*` (URLs `/moves`); the product noun is Relocation Case File.

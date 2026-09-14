@@ -16,7 +16,7 @@ export default async function MovesPage() {
     return null;
   }
 
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const { data: moves, error } = await supabase
     .from("moves")
     .select("*")
@@ -39,8 +39,8 @@ export default async function MovesPage() {
         <h1 className="font-heading text-4xl leading-tight">No Case File yet</h1>
         <p className="text-muted-foreground">
           Open a {CASE_FILE_LABEL} to orchestrate an NYC relocation. We&apos;ll seed
-          the six L3 Customer Services journey stages and checklist — this is
-          software, not a moving company.
+          the six journey stages and checklist — this is software, not a moving
+          company.
         </p>
         <Link
           href="/moves/new"
@@ -67,7 +67,7 @@ export default async function MovesPage() {
       </div>
       <div className="grid gap-3">
         {moves.map((move) => (
-          <MoveCard key={move.id} move={move} />
+          <MoveCard key={move.id} move={move} shared={move.user_id !== user.id} />
         ))}
       </div>
     </section>

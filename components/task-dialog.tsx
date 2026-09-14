@@ -32,14 +32,17 @@ export function TaskDialog({
   moveId,
   defaultStage,
   task,
+  allTasks,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   moveId: string;
   defaultStage: StageKey;
   task?: TaskRow | null;
+  allTasks: TaskRow[];
 }) {
   const [pending, setPending] = useState(false);
+  const dependencyChoices = allTasks.filter((row) => row.id !== task?.id);
 
   async function onSubmit(formData: FormData) {
     setPending(true);
@@ -49,6 +52,8 @@ export function TaskDialog({
       status: String(formData.get("status")) as TaskStatus,
       notes: String(formData.get("notes") ?? ""),
       is_optional: formData.get("is_optional") === "on",
+      due_date: String(formData.get("due_date") ?? ""),
+      depends_on_task_id: String(formData.get("depends_on_task_id") ?? ""),
     };
     const result = task
       ? await updateTask(moveId, task.id, payload)
@@ -68,7 +73,8 @@ export function TaskDialog({
         <DialogHeader>
           <DialogTitle>{task ? "Edit task" : "Add task"}</DialogTitle>
           <DialogDescription>
-            Tasks live on an L3 journey stage. Status is manual in Week 1.
+            Optional due date and a simple dependency. Incomplete dependencies show a
+            “Blocked by” warning — not a hard lock.
           </DialogDescription>
         </DialogHeader>
         <form action={onSubmit} className="grid gap-4">
@@ -105,6 +111,39 @@ export function TaskDialog({
                 {TASK_STATUSES.map((status) => (
                   <option key={status} value={status}>
                     {TASK_STATUS_LABELS[status]}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Due date"
+              htmlFor="task-due"
+              hint="Optional. Overdue tasks are flagged on the checklist."
+            >
+              <Input
+                id="task-due"
+                name="due_date"
+                type="date"
+                className="h-11"
+                defaultValue={task?.due_date ?? ""}
+              />
+            </Field>
+            <Field
+              label="Blocked by"
+              htmlFor="task-depends"
+              hint="Soft-block warning until that task is done."
+            >
+              <NativeSelect
+                id="task-depends"
+                name="depends_on_task_id"
+                defaultValue={task?.depends_on_task_id ?? "none"}
+              >
+                <option value="none">None</option>
+                {dependencyChoices.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {STAGE_META[row.stage_key].label}: {row.title}
                   </option>
                 ))}
               </NativeSelect>

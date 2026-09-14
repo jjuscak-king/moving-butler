@@ -70,14 +70,20 @@ export function AuthForm({
         {mode === "signin" ? (
           <>
             New here?{" "}
-            <Link href="/signup" className="font-medium text-foreground underline-offset-4 hover:underline">
+            <Link
+              href={nextPath ? `/signup?next=${encodeURIComponent(nextPath)}` : "/signup"}
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
               Create an account
             </Link>
           </>
         ) : (
           <>
             Already have an account?{" "}
-            <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
+            <Link
+              href={nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login"}
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
               Sign in
             </Link>
           </>

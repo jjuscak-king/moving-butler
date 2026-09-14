@@ -4,18 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import type { ActionState } from "@/lib/move-form";
-
-function safeNextPath(next: FormDataEntryValue | null) {
-  if (typeof next !== "string" || !next.startsWith("/") || next.startsWith("//")) {
-    return "/";
-  }
-  return next;
-}
+import { safeInternalPath } from "@/lib/paths";
 
 export async function signIn(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = safeNextPath(formData.get("next"));
+  const next = safeInternalPath(
+    typeof formData.get("next") === "string" ? String(formData.get("next")) : null
+  );
 
   if (!email || !password) {
     return { error: "Email and password are required." };
@@ -40,6 +36,9 @@ export async function signIn(_prev: ActionState, formData: FormData): Promise<Ac
 export async function signUp(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const next = safeInternalPath(
+    typeof formData.get("next") === "string" ? String(formData.get("next")) : null
+  );
 
   if (!email || !password) {
     return { error: "Email and password are required." };
@@ -56,12 +55,13 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
     return { error: err instanceof Error ? err.message : "Supabase is not configured." };
   }
   const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  const confirmNext = next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: origin
-      ? { emailRedirectTo: `${origin}/auth/confirm` }
+      ? { emailRedirectTo: `${origin}/auth/confirm${confirmNext}` }
       : undefined,
   });
 
@@ -71,7 +71,7 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
 
   if (data.session) {
     revalidatePath("/", "layout");
-    redirect("/");
+    redirect(next);
   }
 
   return {
