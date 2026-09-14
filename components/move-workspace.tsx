@@ -24,6 +24,8 @@ import {
 import {
   ACCESS_LABELS,
   BOROUGH_LABELS,
+  CASE_FILE_LABEL,
+  CASE_FILE_LABEL_SHORT,
   HOME_SIZE_LABELS,
   SERVICE_MODE_LABELS,
   STAGE_KEYS,
@@ -89,7 +91,7 @@ export function MoveWorkspace({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
-              Move profile
+              {CASE_FILE_LABEL}
             </p>
             <h1 className="font-heading text-3xl leading-tight">{move.label}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -104,7 +106,7 @@ export function MoveWorkspace({
               className="h-10"
               render={<Link href={`/moves/${move.id}/edit`} />}
             >
-              Edit profile
+              Edit {CASE_FILE_LABEL_SHORT}
             </Button>
             <DeleteMoveButton moveId={move.id} label={move.label} />
           </div>
@@ -139,9 +141,10 @@ export function MoveWorkspace({
 
       <section className="grid gap-3">
         <div>
-          <h2 className="font-heading text-xl">Six-stage timeline</h2>
+          <h2 className="font-heading text-xl">Journey stages (L3)</h2>
           <p className="text-sm text-muted-foreground">
-            Fixed order. Status is set by you. Tap a stage to focus its checklist.
+            Customer Services path — Decide through Settle. Tap a stage to focus
+            its checklist.
           </p>
         </div>
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 snap-x snap-mandatory md:mx-0 md:px-0">
@@ -183,7 +186,7 @@ export function MoveWorkspace({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
-              Workstream {focusedMeta.number}
+              Journey stage {focusedMeta.number}
             </p>
             <h2 className="font-heading text-2xl">{focusedMeta.label}</h2>
             <p className="text-sm text-muted-foreground">{focusedMeta.blurb}</p>

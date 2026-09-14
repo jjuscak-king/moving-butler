@@ -68,7 +68,7 @@ export function TaskDialog({
         <DialogHeader>
           <DialogTitle>{task ? "Edit task" : "Add task"}</DialogTitle>
           <DialogDescription>
-            Tasks live on a specialist workstream. Status is manual in Week 1.
+            Tasks live on an L3 journey stage. Status is manual in Week 1.
           </DialogDescription>
         </DialogHeader>
         <form action={onSubmit} className="grid gap-4">

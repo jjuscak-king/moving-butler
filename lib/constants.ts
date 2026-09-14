@@ -1,6 +1,12 @@
+/** Brand name. Pair with PRODUCT_ROLE so the first screen is not read as a moving company. */
 export const PRODUCT_NAME = "Moving Butler";
+/** Frozen product language — not “AI moving assistant”. */
+export const PRODUCT_ROLE = "AI Relocation Manager";
 export const PRODUCT_MOTTO =
-  "NYC-first residential move orchestration — software, not a moving company.";
+  "Software that orchestrates a relocation — not a moving or trucking company.";
+/** System noun for a move (routes stay `/moves`). Casual UI may still say “move”. */
+export const CASE_FILE_LABEL = "Relocation Case File";
+export const CASE_FILE_LABEL_SHORT = "Case File";
 
 export const STAGE_KEYS = [
   "decide",

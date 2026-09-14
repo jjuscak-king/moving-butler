@@ -53,7 +53,7 @@ export async function createMove(
     .single();
 
   if (error || !data) {
-    return { error: error?.message ?? "Could not create the move." };
+    return { error: error?.message ?? "Could not create the Case File." };
   }
 
   revalidatePath("/");

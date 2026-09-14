@@ -14,6 +14,7 @@ import {
   ACCESS_TYPES,
   BOROUGH_LABELS,
   BOROUGHS,
+  CASE_FILE_LABEL_SHORT,
   HOME_SIZE_LABELS,
   HOME_SIZES,
   SERVICE_MODE_LABELS,
@@ -291,7 +292,7 @@ export function MoveForm({ move }: { move?: MoveRow }) {
           Cancel
         </Button>
         <Button type="submit" disabled={pending} className="h-11">
-          {pending ? "Saving…" : move ? "Save move" : "Create move"}
+          {pending ? "Saving…" : move ? `Save ${CASE_FILE_LABEL_SHORT}` : `Create ${CASE_FILE_LABEL_SHORT}`}
         </Button>
       </div>
     </form>

@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CASE_FILE_LABEL_SHORT } from "@/lib/constants";
 
 export function DeleteMoveButton({
   moveId,
@@ -30,11 +31,11 @@ export function DeleteMoveButton({
       <DialogTrigger
         render={<Button variant="destructive" className="h-10" />}
       >
-        Delete move
+        Delete {CASE_FILE_LABEL_SHORT}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Delete this move?</DialogTitle>
+          <DialogTitle>Delete this {CASE_FILE_LABEL_SHORT}?</DialogTitle>
           <DialogDescription>
             “{label}” and its stages and checklist will be permanently removed.
           </DialogDescription>

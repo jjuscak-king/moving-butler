@@ -32,7 +32,7 @@ const minimumTitles = [
 ];
 
 describe("NYC checklist seed", () => {
-  it("seeds every specialist workstream", () => {
+  it("seeds every L3 journey stage", () => {
     for (const key of stages) {
       assert.match(sql, new RegExp(`'${key}'`));
     }

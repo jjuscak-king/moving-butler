@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
-import { PRODUCT_NAME } from "@/lib/constants";
+import { PRODUCT_NAME, PRODUCT_ROLE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export default function NotFound() {
@@ -12,7 +12,7 @@ export default function NotFound() {
       </p>
       <h1 className="font-heading text-4xl">Page not found</h1>
       <p className="text-muted-foreground">
-        That route isn&apos;t part of the Week 1 shell.
+        That route isn&apos;t part of {PRODUCT_NAME}, the {PRODUCT_ROLE}.
       </p>
       <Link href="/" className={cn(buttonVariants(), "h-10 w-fit px-3")}>
         Go home

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { MoveWorkspace } from "@/components/move-workspace";
 import { requireUser } from "@/lib/auth";
-import { STAGE_KEYS } from "@/lib/constants";
+import { CASE_FILE_LABEL_SHORT, STAGE_KEYS } from "@/lib/constants";
 
 export async function generateMetadata({
   params,
@@ -12,7 +12,7 @@ export async function generateMetadata({
   const { id } = await params;
   const { supabase } = await requireUser();
   const { data } = await supabase.from("moves").select("label").eq("id", id).maybeSingle();
-  return { title: data?.label ?? "Move" };
+  return { title: data?.label ?? CASE_FILE_LABEL_SHORT };
 }
 
 export default async function MoveDetailPage({

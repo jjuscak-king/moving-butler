@@ -1,7 +1,8 @@
 import { MoveForm } from "@/components/move-form";
+import { CASE_FILE_LABEL, CASE_FILE_LABEL_SHORT } from "@/lib/constants";
 
 export const metadata = {
-  title: "New move",
+  title: `New ${CASE_FILE_LABEL_SHORT}`,
 };
 
 export default function NewMovePage() {
@@ -9,12 +10,12 @@ export default function NewMovePage() {
     <section className="mx-auto grid max-w-2xl gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
-          NYC move profile
+          {CASE_FILE_LABEL}
         </p>
-        <h1 className="font-heading text-3xl">Create a move</h1>
+        <h1 className="font-heading text-3xl">Create a {CASE_FILE_LABEL_SHORT}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          From/to boroughs, date window, access, and COI. Creating a move seeds
-          the six specialist workstreams.
+          From/to boroughs, date window, access, and COI. Creating a Case File
+          seeds the six L3 Customer Services journey stages.
         </p>
       </div>
       <MoveForm />
