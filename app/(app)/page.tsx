@@ -4,6 +4,7 @@ import { MoveCard } from "@/components/move-card";
 import { buttonVariants } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth";
 import { CASE_FILE_LABEL, CASE_FILE_LABEL_SHORT } from "@/lib/constants";
+import { getSupabaseEnv } from "@/lib/env";
 import { cn } from "@/lib/utils";
 
 export const metadata = {
@@ -11,6 +12,10 @@ export const metadata = {
 };
 
 export default async function MovesPage() {
+  if (!getSupabaseEnv()) {
+    return null;
+  }
+
   const { supabase } = await requireUser();
   const { data: moves, error } = await supabase
     .from("moves")
