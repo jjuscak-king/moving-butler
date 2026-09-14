@@ -1,16 +1,24 @@
 # Moving Butler
 
-NYC-first residential move orchestration SaaS — software, **not** a moving company.
+**AI Relocation Manager** — software that orchestrates a relocation, **not** a moving or trucking company.
 
 Motto: help a household complete a successful NYC relocation through a managed workstream, not by becoming the mover.
 
-Week 1 ships architecture slice **A + D-shell + F**:
+The system noun for a move is the **Relocation Case File** (UI may still say “move” in casual places; routes stay `/moves`).
 
-- **A** Customer & outcome — auth + NYC Move Profile
-- **D-shell** Six specialist workstreams (Decide → Plan → Vendors → Admin → Move day → Settle)
-- **F** Execution — checklist CRUD with an NYC seed
+## Architecture (v1 — three levels)
 
-Provisional strategy: NYC metro · B2C · SaaS spine · later “I booked this” vendor capture. **No marketplace in Week 1.**
+v1 has **three** architecture levels. Journey stages are a path *through* L3, not a fourth type, and not the old A + D-shell + F slice labels.
+
+| Level | Name | What it is |
+| --- | --- | --- |
+| **L1** | Core Operating Framework | Auth, session, app shell |
+| **L2** | Relocation Operating System | Relocation Case File and the operating record of the move |
+| **L3** | Customer Services | Journey stages as a path through L3: Decide → Plan → Vendors → Admin → Move day → Settle |
+
+Week 1 ships a thin slice of all three: auth (L1) + Case File create/edit (L2) + six L3 stages with checklist execution. **No marketplace.**
+
+Provisional strategy: NYC metro · B2C · SaaS spine · later “I booked this” vendor capture.
 
 ## Stack
 
@@ -76,7 +84,7 @@ Authentication → Providers → Email:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). You should be redirected to sign in.
+Open [http://localhost:3000](http://localhost:3000). You should be redirected to sign in. The first screen names **AI Relocation Manager** and states that this is orchestration software, not a moving company.
 
 ```bash
 npm run lint
@@ -93,9 +101,9 @@ npm run build
 
 ## What Week 1 includes
 
-- NYC Move Profile: create / edit / delete (label, from/to address + borough, date window with end ≥ start, home size, access, COI, DIY vs full-service, optional notes)
-- Moves list (including a single card) and empty state **Create your first move**
-- Fixed six-stage timeline; manual status: Not started | In progress | Blocked | Done
+- Relocation Case File: create / edit / delete (label, from/to address + borough, date window with end ≥ start, home size, access, COI, DIY vs full-service, optional notes)
+- Case File list (including a single card) and empty state **Create your first Case File**
+- Fixed six L3 journey stages; manual status: Not started | In progress | Blocked | Done
 - Selecting a stage focuses that stage’s checklist
 - Seeded tasks (≥1 per stage, fuller NYC Admin cluster). COI and elevator tasks always appear and are marked optional
 - Task CRUD with confirm-on-delete; Blocked is visually distinct
@@ -114,4 +122,4 @@ Co-mover invites, due dates/dependencies/reminders, vendor capture or marketplac
 | `move_stages` | via owning move |
 | `tasks` | via owning move |
 
-Users only read/write their own moves and related rows.
+Users only read/write their own moves and related rows. Table names stay `moves*` (URLs `/moves`); the product noun is Relocation Case File.

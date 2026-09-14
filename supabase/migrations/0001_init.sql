@@ -1,5 +1,7 @@
 -- Moving Butler Week 1: profiles, moves, stages, tasks + RLS
--- Architecture slice: A (customer/outcome) + D-shell (six stages) + F (checklist execution)
+-- v1 architecture (three levels, not A+D+F): L1 Core Operating Framework,
+-- L2 Relocation Operating System (Relocation Case File),
+-- L3 Customer Services journey stages
 
 create extension if not exists "pgcrypto";
 
@@ -177,7 +179,7 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute procedure public.handle_new_user();
 
--- Seed six specialist workstreams + NYC residential checklist on every new move.
+-- Seed six L3 Customer Services journey stages + NYC residential checklist on every new move.
 create or replace function public.seed_move_workstreams()
 returns trigger
 language plpgsql

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { signOut } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
-import { PRODUCT_NAME } from "@/lib/constants";
+import { PRODUCT_NAME, PRODUCT_ROLE } from "@/lib/constants";
 
 export function AppHeader({ email }: { email?: string | null }) {
   return (
@@ -11,7 +11,7 @@ export function AppHeader({ email }: { email?: string | null }) {
         <Link href="/" className="min-w-0">
           <p className="truncate font-heading text-lg leading-none">{PRODUCT_NAME}</p>
           <p className="truncate text-[11px] text-muted-foreground">
-            NYC move orchestration
+            {PRODUCT_ROLE}
           </p>
         </Link>
         <div className="flex items-center gap-2">

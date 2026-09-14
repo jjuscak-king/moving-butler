@@ -4,7 +4,7 @@ import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
-import { PRODUCT_MOTTO, PRODUCT_NAME } from "@/lib/constants";
+import { PRODUCT_MOTTO, PRODUCT_NAME, PRODUCT_ROLE } from "@/lib/constants";
 
 import "./globals.css";
 
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     default: PRODUCT_NAME,
     template: `%s · ${PRODUCT_NAME}`,
   },
-  description: PRODUCT_MOTTO,
+  description: `${PRODUCT_ROLE}. ${PRODUCT_MOTTO}`,
   icons: { icon: "/favicon.svg" },
 };
 
