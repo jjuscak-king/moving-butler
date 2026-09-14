@@ -2,6 +2,7 @@ import type {
   AccessType,
   Borough,
   HomeSize,
+  MemberRole,
   ServiceMode,
   StageKey,
   StageStatus,
@@ -23,16 +24,19 @@ export type Database = {
         Row: {
           id: string;
           email: string | null;
+          reminders_enabled: boolean;
           created_at: string;
         };
         Insert: {
           id: string;
           email?: string | null;
+          reminders_enabled?: boolean;
           created_at?: string;
         };
         Update: {
           id?: string;
           email?: string | null;
+          reminders_enabled?: boolean;
           created_at?: string;
         };
         Relationships: [];
@@ -134,6 +138,10 @@ export type Database = {
           notes: string | null;
           sort_order: number;
           is_optional: boolean;
+          due_date: string | null;
+          depends_on_task_id: string | null;
+          claimed_by: string | null;
+          reminder_sent_on: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -146,6 +154,10 @@ export type Database = {
           notes?: string | null;
           sort_order?: number;
           is_optional?: boolean;
+          due_date?: string | null;
+          depends_on_task_id?: string | null;
+          claimed_by?: string | null;
+          reminder_sent_on?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -158,8 +170,72 @@ export type Database = {
           notes?: string | null;
           sort_order?: number;
           is_optional?: boolean;
+          due_date?: string | null;
+          depends_on_task_id?: string | null;
+          claimed_by?: string | null;
+          reminder_sent_on?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      move_members: {
+        Row: {
+          id: string;
+          move_id: string;
+          user_id: string;
+          role: MemberRole;
+          email: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          move_id: string;
+          user_id: string;
+          role?: MemberRole;
+          email?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          move_id?: string;
+          user_id?: string;
+          role?: MemberRole;
+          email?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      move_invites: {
+        Row: {
+          id: string;
+          move_id: string;
+          token: string;
+          created_by: string;
+          created_at: string;
+          expires_at: string;
+          revoked_at: string | null;
+          accepted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          move_id: string;
+          token?: string;
+          created_by: string;
+          created_at?: string;
+          expires_at?: string;
+          revoked_at?: string | null;
+          accepted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          move_id?: string;
+          token?: string;
+          created_by?: string;
+          created_at?: string;
+          expires_at?: string;
+          revoked_at?: string | null;
+          accepted_at?: string | null;
         };
         Relationships: [];
       };
@@ -168,7 +244,29 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      is_move_owner: {
+        Args: { p_move_id: string };
+        Returns: boolean;
+      };
+      is_move_member: {
+        Args: { p_move_id: string };
+        Returns: boolean;
+      };
+      get_move_invite: {
+        Args: { p_token: string };
+        Returns: {
+          move_id: string;
+          move_label: string;
+          expires_at: string;
+          revoked: boolean;
+          already_member: boolean;
+          is_owner: boolean;
+        }[];
+      };
+      accept_move_invite: {
+        Args: { p_token: string };
+        Returns: string;
+      };
     };
     Enums: {
       borough: Borough;
@@ -178,6 +276,7 @@ export type Database = {
       stage_key: StageKey;
       stage_status: StageStatus;
       task_status: TaskStatus;
+      move_member_role: MemberRole;
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -189,3 +288,6 @@ export type MoveRow = Database["public"]["Tables"]["moves"]["Row"];
 export type MoveStageRow = Database["public"]["Tables"]["move_stages"]["Row"];
 export type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+export type MoveMemberRow = Database["public"]["Tables"]["move_members"]["Row"];
+export type MoveInviteRow = Database["public"]["Tables"]["move_invites"]["Row"];
+export type MoveInvitePreview = Database["public"]["Functions"]["get_move_invite"]["Returns"][number];

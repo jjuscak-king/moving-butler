@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, it } from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const sql = readFileSync(join(root, "supabase/migrations/0001_init.sql"), "utf8");
+const migrationsDir = join(root, "supabase/migrations");
+const sql = readdirSync(migrationsDir)
+  .filter((name) => name.endsWith(".sql"))
+  .sort()
+  .map((name) => readFileSync(join(migrationsDir, name), "utf8"))
+  .join("\n");
 
 const stages = ["decide", "plan", "vendors", "admin", "move_day", "settle"];
 const minimumTitles = [
@@ -32,7 +37,7 @@ const minimumTitles = [
 ];
 
 describe("NYC checklist seed", () => {
-  it("seeds every L3 journey stage", () => {
+  it("seeds every journey stage", () => {
     for (const key of stages) {
       assert.match(sql, new RegExp(`'${key}'`));
     }
@@ -44,8 +49,47 @@ describe("NYC checklist seed", () => {
     }
   });
 
-  it("always includes COI and elevator admin tasks", () => {
+  it("always includes the NYC constraint pack", () => {
     assert.ok(sql.includes("Request COI if needed"));
     assert.ok(sql.includes("Book elevator / loading dock"));
+    assert.ok(sql.includes("Loading dock reservation notes"));
+    assert.ok(sql.includes("Street parking notes"));
+  });
+});
+
+describe("Week 2 schema", () => {
+  it("adds due dates, dependencies, and claim columns", () => {
+    assert.match(sql, /due_date date/);
+    assert.match(sql, /depends_on_task_id/);
+    assert.match(sql, /claimed_by/);
+    assert.match(sql, /reminder_sent_on/);
+  });
+
+  it("adds move membership and invite tables", () => {
+    assert.match(sql, /create table if not exists public\.move_members/);
+    assert.match(sql, /create table if not exists public\.move_invites/);
+    assert.match(sql, /accept_move_invite/);
+    assert.match(sql, /is_move_member/);
+  });
+
+  it("soft-blocks Move-day critical tasks on the COI admin task", () => {
+    assert.match(sql, /Request COI if needed/);
+    assert.match(sql, /depends_on_task_id = coi\.id/);
+    assert.match(sql, /Confirm crew time/);
+    assert.match(sql, /Prep building access notes/);
+    assert.doesNotMatch(
+      sql,
+      /depends_on_task_id = coi\.id,\s*status = 'blocked'/
+    );
+  });
+
+  it("stores a per-user reminder preference", () => {
+    assert.match(sql, /reminders_enabled boolean not null default true/);
+  });
+
+  it("keeps owner-only deletes for Case File-level irreversible actions", () => {
+    assert.match(sql, /is_move_owner\(move_id\)/);
+    assert.match(sql, /tasks_delete_own/);
+    assert.match(sql, /move_invites_insert_owner/);
   });
 });

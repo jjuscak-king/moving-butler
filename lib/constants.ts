@@ -173,3 +173,25 @@ export const MINIMUM_SEED_TITLES = [
   "Confirm utilities live",
   "7-day open-task sweep",
 ] as const;
+
+/** NYC constraint pack titles that must stay in the seed. */
+export const NYC_CONSTRAINT_TITLES = [
+  "Request COI if needed",
+  "Book elevator / loading dock",
+  "Loading dock reservation notes",
+  "Street parking notes",
+] as const;
+
+export const MOVE_DAY_COI_DEPENDENTS = [
+  "Confirm crew time",
+  "Prep building access notes",
+  "Protect floors / elevators notes",
+] as const;
+
+export const MEMBER_ROLES = ["owner", "member"] as const;
+export type MemberRole = (typeof MEMBER_ROLES)[number];
+
+export const MEMBER_ROLE_LABELS: Record<MemberRole, string> = {
+  owner: "Owner",
+  member: "Co-mover",
+};

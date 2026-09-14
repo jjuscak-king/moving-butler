@@ -2,8 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getSupabaseEnv } from "@/lib/env";
+import { safeInternalPath } from "@/lib/paths";
 
-const PUBLIC_PREFIXES = ["/login", "/signup", "/auth"];
+const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/api"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PREFIXES.some(
@@ -57,7 +58,8 @@ export async function updateSession(request: NextRequest) {
 
   if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    const next = safeInternalPath(request.nextUrl.searchParams.get("next"));
+    url.pathname = next;
     url.search = "";
     const redirectResponse = NextResponse.redirect(url);
     supabaseResponse.cookies.getAll().forEach((cookie) => {

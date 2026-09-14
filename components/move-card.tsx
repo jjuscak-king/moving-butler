@@ -18,7 +18,13 @@ import {
 import type { MoveRow } from "@/lib/database.types";
 import { formatMoveWindow } from "@/lib/format";
 
-export function MoveCard({ move }: { move: MoveRow }) {
+export function MoveCard({
+  move,
+  shared = false,
+}: {
+  move: MoveRow;
+  shared?: boolean;
+}) {
   return (
     <Link href={`/moves/${move.id}`} className="block">
       <Card className="transition-colors hover:bg-muted/40">
@@ -32,7 +38,10 @@ export function MoveCard({ move }: { move: MoveRow }) {
                 <span>{BOROUGH_LABELS[move.to_borough]}</span>
               </CardDescription>
             </div>
-            <Badge variant="outline">{HOME_SIZE_LABELS[move.home_size]}</Badge>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <Badge variant="outline">{HOME_SIZE_LABELS[move.home_size]}</Badge>
+              {shared ? <Badge variant="secondary">Shared</Badge> : null}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="grid gap-2 text-sm text-muted-foreground">

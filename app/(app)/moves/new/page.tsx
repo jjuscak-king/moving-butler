@@ -15,7 +15,7 @@ export default function NewMovePage() {
         <h1 className="font-heading text-3xl">Create a {CASE_FILE_LABEL_SHORT}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           From/to boroughs, date window, access, and COI. Creating a Case File
-          seeds the six L3 Customer Services journey stages.
+          seeds the six journey stages.
         </p>
       </div>
       <MoveForm />
