@@ -31,4 +31,27 @@ describe("consumer chrome language", () => {
     }
     assert.deepEqual(hits, []);
   });
+
+  it("shows a Blocked by warning and NYC constraint banner", () => {
+    const workspace = readFileSync(join(root, "components/move-workspace.tsx"), "utf8");
+    const banner = readFileSync(join(root, "components/nyc-constraint-banner.tsx"), "utf8");
+    assert.match(workspace, /Blocked by/);
+    assert.match(banner, /NYC constraint pack/);
+    assert.match(banner, /COI/);
+    assert.match(banner, /loading dock/);
+    assert.match(banner, /parking/);
+  });
+
+  it("does not hard-lock completing a dependent task", () => {
+    const tasks = readFileSync(join(root, "app/actions/tasks.ts"), "utf8");
+    assert.doesNotMatch(tasks, /Blocked until/);
+    assert.match(tasks, /export async function claimTask/);
+    assert.match(tasks, /claimed_by: user\.id/);
+  });
+
+  it("joins co-movers via invite token into move_members", () => {
+    const invites = readFileSync(join(root, "app/actions/invites.ts"), "utf8");
+    assert.match(invites, /accept_move_invite/);
+    assert.match(invites, /\/invite\//);
+  });
 });

@@ -36,3 +36,44 @@ export function dependencyTitle(
   if (!dependsOnTaskId) return null;
   return tasks.find((task) => task.id === dependsOnTaskId)?.title ?? null;
 }
+
+/** True when this task still needs a due/overdue reminder for `today` (YYYY-MM-DD, NYC). */
+export function needsReminderToday(
+  reminderSentOn: string | null | undefined,
+  today: string
+): boolean {
+  return !reminderSentOn || reminderSentOn < today;
+}
+
+export function isReminderEligible(
+  task: { due_date: string | null; status: string; reminder_sent_on?: string | null },
+  today: string
+): boolean {
+  if (!task.due_date || task.status === "done") return false;
+  if (task.due_date > today) return false;
+  return needsReminderToday(task.reminder_sent_on ?? null, today);
+}
+
+/** Owner always; claimant only when the task is claimed. */
+export function reminderRecipientIds(
+  ownerId: string,
+  tasks: readonly { claimed_by: string | null }[]
+): string[] {
+  const ids = new Set<string>([ownerId]);
+  for (const task of tasks) {
+    if (task.claimed_by) ids.add(task.claimed_by);
+  }
+  return [...ids];
+}
+
+export function filterReminderRecipients(
+  recipientIds: readonly string[],
+  profiles: readonly { id: string; reminders_enabled: boolean }[],
+  respectPrefs: boolean
+): string[] {
+  if (!respectPrefs) return [...recipientIds];
+  const disabled = new Set(
+    profiles.filter((profile) => profile.reminders_enabled === false).map((profile) => profile.id)
+  );
+  return recipientIds.filter((id) => !disabled.has(id));
+}

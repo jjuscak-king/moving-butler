@@ -77,6 +77,10 @@ describe("Week 2 schema", () => {
     assert.match(sql, /depends_on_task_id = coi\.id/);
     assert.match(sql, /Confirm crew time/);
     assert.match(sql, /Prep building access notes/);
+    assert.doesNotMatch(
+      sql,
+      /depends_on_task_id = coi\.id,\s*status = 'blocked'/
+    );
   });
 
   it("stores a per-user reminder preference", () => {

@@ -15,6 +15,13 @@ alter table public.tasks
   add column if not exists claimed_by uuid references auth.users (id) on delete set null,
   add column if not exists reminder_sent_on date;
 
+comment on column public.tasks.due_date is
+  'Optional UTC calendar date (date-only). UI displays America/New_York.';
+comment on column public.tasks.depends_on_task_id is
+  'Single same-Case-File predecessor. Soft-block warning only; not a hard lock.';
+comment on column public.tasks.reminder_sent_on is
+  'NYC calendar date the due reminder was last sent; at most once per local day.';
+
 alter table public.tasks
   drop constraint if exists tasks_no_self_dependency;
 alter table public.tasks
@@ -310,10 +317,9 @@ begin
     (new.id, 'settle', '7-day open-task sweep', 'Walk remaining todos, returns, and building deposits one week in.', 3, false);
 
   -- Soft dependency: COI admin work before Move-day critical tasks.
+  -- Warning-only (depends_on); do not hard-lock status to blocked.
   update public.tasks t
-  set
-    depends_on_task_id = coi.id,
-    status = 'blocked'
+  set depends_on_task_id = coi.id
   from public.tasks coi
   where coi.move_id = new.id
     and coi.title = 'Request COI if needed'
@@ -347,9 +353,7 @@ where not exists (
 );
 
 update public.tasks t
-set
-  depends_on_task_id = coi.id,
-  status = case when t.status = 'done' then t.status else 'blocked' end
+set depends_on_task_id = coi.id
 from public.tasks coi
 where coi.move_id = t.move_id
   and coi.title = 'Request COI if needed'

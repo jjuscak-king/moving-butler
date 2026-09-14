@@ -120,7 +120,7 @@ export function TaskDialog({
             <Field
               label="Due date"
               htmlFor="task-due"
-              hint="Optional. Overdue tasks are flagged on the checklist."
+              hint="Date only (UTC calendar date). Shown in New York time."
             >
               <Input
                 id="task-due"

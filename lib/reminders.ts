@@ -4,13 +4,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { CASE_FILE_LABEL, PRODUCT_NAME, PRODUCT_ROLE } from "@/lib/constants";
 import { getResendConfig, getSiteUrl } from "@/lib/env";
-import { todayInNyc } from "@/lib/task-state";
+import {
+  filterReminderRecipients,
+  isReminderEligible,
+  reminderRecipientIds,
+  todayInNyc,
+} from "@/lib/task-state";
 
 type Client = SupabaseClient<Database>;
-
-function needsReminder(reminderSentOn: string | null, today: string): boolean {
-  return !reminderSentOn || reminderSentOn < today;
-}
 
 export async function sendDueRemindersForMove(
   supabase: Client,
@@ -48,20 +49,22 @@ export async function sendDueRemindersForMove(
   if (memberError) return { error: memberError.message, sent: 0, skipped: null };
   if (!move) return { error: "Case File not found.", sent: 0, skipped: null };
 
-  const dueTasks = (tasks ?? []).filter((task) => needsReminder(task.reminder_sent_on, today));
+  const dueTasks = (tasks ?? []).filter((task) => isReminderEligible(task, today));
   if (dueTasks.length === 0) {
     return { error: null, sent: 0, skipped: "No due or overdue tasks need a reminder today." };
   }
 
-  const recipientIds = new Set<string>([move.user_id]);
-  for (const task of dueTasks) {
-    if (task.claimed_by) recipientIds.add(task.claimed_by);
-  }
-
+  const candidateIds = reminderRecipientIds(move.user_id, dueTasks);
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, email, reminders_enabled")
-    .in("id", [...recipientIds]);
+    .in("id", candidateIds);
+
+  const recipientIds = filterReminderRecipients(
+    candidateIds,
+    profiles ?? [],
+    respectPrefs
+  );
 
   const emailByUser = new Map<string, string>();
   for (const member of members ?? []) {
@@ -71,18 +74,13 @@ export async function sendDueRemindersForMove(
     if (profile.email) emailByUser.set(profile.id, profile.email);
   }
 
-  const disabled = new Set(
-    (profiles ?? [])
-      .filter((profile) => respectPrefs && profile.reminders_enabled === false)
-      .map((profile) => profile.id)
-  );
-
-  const recipients = [...recipientIds]
-    .filter((userId) => !disabled.has(userId))
-    .map((userId) => emailByUser.get(userId)?.trim())
-    .filter((email): email is string => Boolean(email));
-
-  const uniqueRecipients = [...new Set(recipients)];
+  const uniqueRecipients = [
+    ...new Set(
+      recipientIds
+        .map((userId) => emailByUser.get(userId)?.trim())
+        .filter((email): email is string => Boolean(email))
+    ),
+  ];
 
   if (uniqueRecipients.length === 0) {
     return {
@@ -161,7 +159,7 @@ export async function sendDueRemindersForAllMoves(supabase: Client, today = toda
   const moveIds = [
     ...new Set(
       (tasks ?? [])
-        .filter((task) => needsReminder(task.reminder_sent_on, today))
+        .filter((task) => isReminderEligible(task, today))
         .map((task) => task.move_id)
     ),
   ];
