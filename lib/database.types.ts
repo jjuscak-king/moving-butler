@@ -59,6 +59,11 @@ export type Database = {
           service_mode: ServiceMode;
           budget_notes: string | null;
           building_notes: string | null;
+          mgmt_name: string | null;
+          mgmt_phone: string | null;
+          elevator_window_notes: string | null;
+          loading_dock_notes: string | null;
+          coi_status_notes: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -79,6 +84,11 @@ export type Database = {
           service_mode: ServiceMode;
           budget_notes?: string | null;
           building_notes?: string | null;
+          mgmt_name?: string | null;
+          mgmt_phone?: string | null;
+          elevator_window_notes?: string | null;
+          loading_dock_notes?: string | null;
+          coi_status_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -99,6 +109,11 @@ export type Database = {
           service_mode?: ServiceMode;
           budget_notes?: string | null;
           building_notes?: string | null;
+          mgmt_name?: string | null;
+          mgmt_phone?: string | null;
+          elevator_window_notes?: string | null;
+          loading_dock_notes?: string | null;
+          coi_status_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -142,6 +157,7 @@ export type Database = {
           depends_on_task_id: string | null;
           claimed_by: string | null;
           reminder_sent_on: string | null;
+          admin_pack: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -158,6 +174,7 @@ export type Database = {
           depends_on_task_id?: string | null;
           claimed_by?: string | null;
           reminder_sent_on?: string | null;
+          admin_pack?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -174,6 +191,7 @@ export type Database = {
           depends_on_task_id?: string | null;
           claimed_by?: string | null;
           reminder_sent_on?: string | null;
+          admin_pack?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -202,6 +220,36 @@ export type Database = {
           user_id?: string;
           role?: MemberRole;
           email?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      move_issues: {
+        Row: {
+          id: string;
+          move_id: string;
+          kind: string;
+          details: string | null;
+          next_steps: string;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          move_id: string;
+          kind: string;
+          details?: string | null;
+          next_steps: string;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          move_id?: string;
+          kind?: string;
+          details?: string | null;
+          next_steps?: string;
+          created_by?: string;
           created_at?: string;
         };
         Relationships: [];
@@ -290,4 +338,5 @@ export type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 export type MoveMemberRow = Database["public"]["Tables"]["move_members"]["Row"];
 export type MoveInviteRow = Database["public"]["Tables"]["move_invites"]["Row"];
+export type MoveIssueRow = Database["public"]["Tables"]["move_issues"]["Row"];
 export type MoveInvitePreview = Database["public"]["Functions"]["get_move_invite"]["Returns"][number];

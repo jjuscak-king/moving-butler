@@ -264,15 +264,82 @@ export function MoveForm({ move }: { move?: MoveRow }) {
         />
       </Field>
       <Field
-        label="Building notes (optional)"
+        label="Building / management notes (optional)"
         htmlFor="building_notes"
+        hint="Freeform access rules. Structured fields below show on the Move-day runbook. Owner edits; co-movers view."
         error={state.fieldErrors?.building_notes?.[0]}
       >
         <Textarea
           id="building_notes"
           name="building_notes"
           defaultValue={move?.building_notes ?? ""}
-          placeholder="Super name, freight hours, walk-up flights, COI email…"
+          placeholder="Padding rules, walk-up flights, COI email…"
+        />
+      </Field>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field
+          label="Management name (optional)"
+          htmlFor="mgmt_name"
+          error={state.fieldErrors?.mgmt_name?.[0]}
+        >
+          <Input
+            id="mgmt_name"
+            name="mgmt_name"
+            className="h-11"
+            defaultValue={move?.mgmt_name ?? ""}
+            placeholder="Super / management office"
+          />
+        </Field>
+        <Field
+          label="Management phone (optional)"
+          htmlFor="mgmt_phone"
+          hint="Tap-to-call on Move day."
+          error={state.fieldErrors?.mgmt_phone?.[0]}
+        >
+          <Input
+            id="mgmt_phone"
+            name="mgmt_phone"
+            type="tel"
+            className="h-11"
+            defaultValue={move?.mgmt_phone ?? ""}
+            placeholder="(212) 555-0100"
+          />
+        </Field>
+      </div>
+      <Field
+        label="Elevator window notes (optional)"
+        htmlFor="elevator_window_notes"
+        error={state.fieldErrors?.elevator_window_notes?.[0]}
+      >
+        <Textarea
+          id="elevator_window_notes"
+          name="elevator_window_notes"
+          defaultValue={move?.elevator_window_notes ?? ""}
+          placeholder="Freight pad 9–11am, pads required…"
+        />
+      </Field>
+      <Field
+        label="Loading dock notes (optional)"
+        htmlFor="loading_dock_notes"
+        error={state.fieldErrors?.loading_dock_notes?.[0]}
+      >
+        <Textarea
+          id="loading_dock_notes"
+          name="loading_dock_notes"
+          defaultValue={move?.loading_dock_notes ?? ""}
+          placeholder="Dock hours, reservation #, street vs dock staging…"
+        />
+      </Field>
+      <Field
+        label="COI status notes (optional)"
+        htmlFor="coi_status_notes"
+        error={state.fieldErrors?.coi_status_notes?.[0]}
+      >
+        <Textarea
+          id="coi_status_notes"
+          name="coi_status_notes"
+          defaultValue={move?.coi_status_notes ?? ""}
+          placeholder="On file with management / pending / N/A…"
         />
       </Field>
 

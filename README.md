@@ -16,7 +16,7 @@ v1 has **three** architecture levels. Journey stages are a path *through* L3, no
 | **L2** | Relocation Operating System | Relocation Case File and the operating record of the move |
 | **L3** | Customer Services | Journey stages as a path through L3: Decide → Plan → Vendors → Admin → Move day → Settle |
 
-Week 1 ships a thin slice of all three: auth (L1) + Case File create/edit (L2) + six L3 stages with checklist execution. Week 2 stays on that CORE: due dates, simple dependencies, email reminders, co-mover membership. **No marketplace.**
+Week 1 ships a thin slice of all three: auth (L1) + Case File create/edit (L2) + six L3 stages with checklist execution. Week 2 stays on that CORE: due dates, simple dependencies, email reminders, co-mover membership. Week 3 stays on that CORE: Admin packs, Move-day runbook, lightweight SOS. **No marketplace.**
 
 Provisional strategy: NYC metro · B2C · SaaS spine · later “I booked this” vendor capture.
 
@@ -64,7 +64,9 @@ SQL Editor → New query → paste `supabase/migrations/0001_init.sql` → Run.
 
 Then paste `supabase/migrations/0002_week2.sql` → Run.
 
-`0001` creates `profiles`, `moves`, `move_stages`, `tasks`, RLS, and the seed trigger. `0002` adds due dates, simple `depends_on`, move membership / invite links, and extends the NYC constraint pack (COI, elevator, loading dock, parking). Existing Case Files are backfilled.
+Then paste `supabase/migrations/0003_week3.sql` → Run.
+
+`0001` creates `profiles`, `moves`, `move_stages`, `tasks`, RLS, and the seed trigger. `0002` adds due dates, simple `depends_on`, move membership / invite links, and extends the NYC constraint pack (COI, elevator, loading dock, parking). `0003` adds Admin pack tags (`admin_pack`), structured building notes, the Move-day issue log, and owner remove-co-mover. Existing Case Files are backfilled.
 
 Optional CLI (if you use the Supabase CLI against this project):
 
@@ -152,9 +154,19 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/task
 
 On Vercel, `vercel.json` registers a daily GET to that path. Set the same `CRON_SECRET` in the project env; Vercel sends `Authorization: Bearer $CRON_SECRET`. Hobby plans support a daily cron. This is not push notifications.
 
+## What Week 3 includes
+
+Aligned to locked **WEEK3-PRD-v0**.
+
+- **Admin packs (A1–A5)** — Hub of five packs (`coa`, `utilities`, `internet`, `insurance`, `building`) with **done/total**. Pack detail lists tasks. Curated links use `target="_blank" rel="noopener"` plus a software-not-filing disclaimer. Pre-Week 3 Case Files are backfilled with an `admin_pack` tag (title heuristic if the tag is missing). Done / Blocked stay first-class on pack tasks.
+- **Building notes (B1–B3)** — Keep `building_notes`. Nullable `mgmt_name`, `mgmt_phone`, `elevator_window_notes`, `loading_dock_notes`, `coi_status_notes`. Owner edits on the Case File; co-movers view. Surfaced on Move day.
+- **Move-day runbook** at `/moves/[id]/move-day` — single phone-width (~375px) screen: contacts, access notes, payment reminder, issue log.
+- **Lightweight SOS**: log a move-day issue, get static suggested next steps. No agent.
+- Owner can **revoke** an open invite and **remove** a co-mover. NYC banner chips deep-link to `?stage=admin&pack=building`.
+
 ## Out of scope (not in this repo)
 
-Vendor capture or marketplace, Week 3 Admin packs / Move-day runbook, Week 4 paywall, native apps, OAuth, push notifications, renaming `/moves` routes.
+Vendor capture or marketplace, Week 4 paywall, native apps, OAuth, push notifications, renaming `/moves` routes.
 
 ## Data model
 
@@ -162,9 +174,10 @@ Vendor capture or marketplace, Week 3 Admin packs / Move-day runbook, Week 4 pay
 | --- | --- |
 | `profiles` | `id = auth.uid()` |
 | `moves` | select: members of the move; insert/update/delete: owner (`user_id`) |
-| `move_members` | select: members of the move (writes via owner trigger / invite RPC) |
+| `move_members` | select: members of the move; delete: owner (co-movers only; writes also via owner trigger / invite RPC) |
 | `move_invites` | owner of the move |
 | `move_stages` | select/update: members; insert/delete: owner |
 | `tasks` | select/insert/update: members; delete: owner |
+| `move_issues` | select/insert: members |
 
-`tasks.due_date` is optional. `tasks.depends_on_task_id` is a single same-Case-File dependency. Table names stay `moves*` (URLs `/moves`); the product noun is Relocation Case File.
+`tasks.due_date` is optional. `tasks.depends_on_task_id` is a single same-Case-File dependency. `tasks.admin_pack` tags Admin hub work (`coa` | `utilities` | `internet` | `insurance` | `building`). Building notes keep `building_notes` plus nullable `mgmt_name`, `mgmt_phone`, `elevator_window_notes`, `loading_dock_notes`, `coi_status_notes`. Table names stay `moves*` (URLs `/moves`); the product noun is Relocation Case File.

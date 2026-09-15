@@ -41,12 +41,12 @@ export const STAGE_META: Record<
   admin: {
     number: 4,
     label: "Admin",
-    blurb: "NYC building, COI, utilities, and change-of-address work.",
+    blurb: "NYC building, change-of-address, utilities, internet, and insurance packs.",
   },
   move_day: {
     number: 5,
     label: "Move day",
-    blurb: "Crew time, access notes, and building protection.",
+    blurb: "Phone runbook: contacts, access notes, payment, and SOS.",
   },
   settle: {
     number: 6,

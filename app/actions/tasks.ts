@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth";
+import { adminPackForTask } from "@/lib/admin-packs";
 import {
   STAGE_KEYS,
   TASK_STATUSES,
@@ -44,6 +45,7 @@ const taskInputSchema = z.object({
 
 function revalidateMove(moveId: string) {
   revalidatePath(`/moves/${moveId}`);
+  revalidatePath(`/moves/${moveId}/move-day`);
   revalidatePath("/");
 }
 
@@ -119,6 +121,8 @@ export async function createTask(moveId: string, input: TaskInput) {
     is_optional: parsed.data.is_optional ?? false,
     due_date: parsed.data.due_date,
     depends_on_task_id: parsed.data.depends_on_task_id,
+    admin_pack:
+      parsed.data.stage_key === "admin" ? adminPackForTask(parsed.data) : null,
     sort_order: (last?.sort_order ?? 0) + 1,
   });
 
@@ -154,6 +158,8 @@ export async function updateTask(moveId: string, taskId: string, input: TaskInpu
       is_optional: parsed.data.is_optional ?? false,
       due_date: parsed.data.due_date,
       depends_on_task_id: parsed.data.depends_on_task_id,
+      admin_pack:
+        parsed.data.stage_key === "admin" ? adminPackForTask(parsed.data) : null,
     })
     .eq("id", taskId)
     .eq("move_id", moveId);

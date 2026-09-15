@@ -48,6 +48,11 @@ export async function createMove(
       service_mode: values.service_mode,
       budget_notes: values.budget_notes || null,
       building_notes: values.building_notes || null,
+      mgmt_name: values.mgmt_name || null,
+      mgmt_phone: values.mgmt_phone || null,
+      elevator_window_notes: values.elevator_window_notes || null,
+      loading_dock_notes: values.loading_dock_notes || null,
+      coi_status_notes: values.coi_status_notes || null,
     })
     .select("id")
     .single();
@@ -93,6 +98,11 @@ export async function updateMove(
       service_mode: values.service_mode,
       budget_notes: values.budget_notes || null,
       building_notes: values.building_notes || null,
+      mgmt_name: values.mgmt_name || null,
+      mgmt_phone: values.mgmt_phone || null,
+      elevator_window_notes: values.elevator_window_notes || null,
+      loading_dock_notes: values.loading_dock_notes || null,
+      coi_status_notes: values.coi_status_notes || null,
     })
     .eq("id", moveId);
 
@@ -102,6 +112,7 @@ export async function updateMove(
 
   revalidatePath("/");
   revalidatePath(`/moves/${moveId}`);
+  revalidatePath(`/moves/${moveId}/move-day`);
   redirect(`/moves/${moveId}`);
 }
 

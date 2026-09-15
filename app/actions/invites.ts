@@ -68,6 +68,81 @@ export async function createMoveInvite(moveId: string) {
   return { error: null, url: inviteUrlForToken(data.token, origin) };
 }
 
+export async function revokeMoveInvite(moveId: string, inviteId: string) {
+  const { supabase, user } = await requireUser();
+  const { data: move } = await supabase
+    .from("moves")
+    .select("id, user_id")
+    .eq("id", moveId)
+    .maybeSingle();
+
+  if (!move || move.user_id !== user.id) {
+    return { error: "Only the owner can revoke an invite." };
+  }
+
+  const { error } = await supabase
+    .from("move_invites")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("id", inviteId)
+    .eq("move_id", moveId)
+    .is("revoked_at", null);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/moves/${moveId}`);
+  return { error: null };
+}
+
+export async function removeMoveMember(moveId: string, memberId: string) {
+  const { supabase, user } = await requireUser();
+  const { data: move } = await supabase
+    .from("moves")
+    .select("id, user_id")
+    .eq("id", moveId)
+    .maybeSingle();
+
+  if (!move || move.user_id !== user.id) {
+    return { error: "Only the owner can remove a co-mover." };
+  }
+
+  const { data: member } = await supabase
+    .from("move_members")
+    .select("id, user_id, role")
+    .eq("id", memberId)
+    .eq("move_id", moveId)
+    .maybeSingle();
+
+  if (!member) {
+    return { error: "That household member was not found." };
+  }
+
+  if (member.role === "owner" || member.user_id === move.user_id) {
+    return { error: "The owner cannot be removed from this Case File." };
+  }
+
+  await supabase
+    .from("tasks")
+    .update({ claimed_by: null })
+    .eq("move_id", moveId)
+    .eq("claimed_by", member.user_id);
+
+  const { error } = await supabase
+    .from("move_members")
+    .delete()
+    .eq("id", memberId)
+    .eq("move_id", moveId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/moves/${moveId}`);
+  revalidatePath(`/moves/${moveId}/move-day`);
+  return { error: null };
+}
+
 export async function acceptMoveInvite(token: string) {
   const { supabase } = await requireUser();
   const { data, error } = await supabase.rpc("accept_move_invite", { p_token: token });
