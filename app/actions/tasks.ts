@@ -121,7 +121,8 @@ export async function createTask(moveId: string, input: TaskInput) {
     is_optional: parsed.data.is_optional ?? false,
     due_date: parsed.data.due_date,
     depends_on_task_id: parsed.data.depends_on_task_id,
-    pack_key: packKeyForTask(parsed.data),
+    pack_key:
+      parsed.data.stage_key === "admin" ? packKeyForTask(parsed.data) : null,
     sort_order: (last?.sort_order ?? 0) + 1,
   });
 
@@ -157,7 +158,8 @@ export async function updateTask(moveId: string, taskId: string, input: TaskInpu
       is_optional: parsed.data.is_optional ?? false,
       due_date: parsed.data.due_date,
       depends_on_task_id: parsed.data.depends_on_task_id,
-      pack_key: packKeyForTask(parsed.data),
+      pack_key:
+        parsed.data.stage_key === "admin" ? packKeyForTask(parsed.data) : null,
     })
     .eq("id", taskId)
     .eq("move_id", moveId);
