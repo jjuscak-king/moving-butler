@@ -139,7 +139,7 @@ export async function removeMoveMember(moveId: string, memberId: string) {
   }
 
   revalidatePath(`/moves/${moveId}`);
-  revalidatePath(`/moves/${moveId}/runbook`);
+  revalidatePath(`/moves/${moveId}/move-day`);
   return { error: null };
 }
 

@@ -141,7 +141,7 @@ export function MoveWorkspace({
               <Button
                 nativeButton={false}
                 className="h-10"
-                render={<Link href={`/moves/${move.id}/runbook`} />}
+                render={<Link href={`/moves/${move.id}/move-day`} />}
               >
                 Move-day runbook
               </Button>
@@ -153,7 +153,7 @@ export function MoveWorkspace({
               <Button
                 nativeButton={false}
                 className="h-10"
-                render={<Link href={`/moves/${move.id}/runbook`} />}
+                render={<Link href={`/moves/${move.id}/move-day`} />}
               >
                 Move-day runbook
               </Button>
@@ -170,18 +170,21 @@ export function MoveWorkspace({
             {move.coi_required ? "COI required" : "COI not marked"}
           </Badge>
         </div>
-        {move.building_notes || move.budget_notes || move.key_contacts ? (
+        {move.building_notes ||
+        move.budget_notes ||
+        move.mgmt_name ||
+        move.mgmt_phone ? (
           <div className="grid gap-2 rounded-xl bg-card p-4 text-sm ring-1 ring-foreground/10">
+            {move.mgmt_name || move.mgmt_phone ? (
+              <p>
+                <span className="font-medium">Management: </span>
+                {[move.mgmt_name, move.mgmt_phone].filter(Boolean).join(" · ")}
+              </p>
+            ) : null}
             {move.building_notes ? (
               <p>
                 <span className="font-medium">Building: </span>
                 {move.building_notes}
-              </p>
-            ) : null}
-            {move.key_contacts ? (
-              <p className="whitespace-pre-wrap">
-                <span className="font-medium">Key contacts: </span>
-                {move.key_contacts}
               </p>
             ) : null}
             {move.budget_notes ? (
@@ -291,22 +294,23 @@ export function MoveWorkspace({
             <div>
               <h3 className="font-heading text-xl">Move-day runbook</h3>
               <p className="text-sm text-muted-foreground">
-                Single phone screen: key contacts, access notes, payment reminder,
+                Single phone screen (~375px): contacts, access notes, payment reminder,
                 and SOS issue log.
               </p>
             </div>
             <Button
               nativeButton={false}
               className="h-11 w-full sm:w-auto"
-              render={<Link href={`/moves/${move.id}/runbook`} />}
+              render={<Link href={`/moves/${move.id}/move-day`} />}
             >
-              Open phone runbook
+              Open Move-day runbook
             </Button>
           </div>
         ) : null}
 
         {selected === "admin" ? (
           <AdminPacks
+            moveId={move.id}
             tasks={focusedTasks}
             allTasks={tasks}
             members={members}

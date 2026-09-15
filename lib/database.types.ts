@@ -59,7 +59,11 @@ export type Database = {
           service_mode: ServiceMode;
           budget_notes: string | null;
           building_notes: string | null;
-          key_contacts: string | null;
+          mgmt_name: string | null;
+          mgmt_phone: string | null;
+          elevator_window_notes: string | null;
+          loading_dock_notes: string | null;
+          coi_status_notes: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -80,7 +84,11 @@ export type Database = {
           service_mode: ServiceMode;
           budget_notes?: string | null;
           building_notes?: string | null;
-          key_contacts?: string | null;
+          mgmt_name?: string | null;
+          mgmt_phone?: string | null;
+          elevator_window_notes?: string | null;
+          loading_dock_notes?: string | null;
+          coi_status_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -101,7 +109,11 @@ export type Database = {
           service_mode?: ServiceMode;
           budget_notes?: string | null;
           building_notes?: string | null;
-          key_contacts?: string | null;
+          mgmt_name?: string | null;
+          mgmt_phone?: string | null;
+          elevator_window_notes?: string | null;
+          loading_dock_notes?: string | null;
+          coi_status_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -145,7 +157,7 @@ export type Database = {
           depends_on_task_id: string | null;
           claimed_by: string | null;
           reminder_sent_on: string | null;
-          pack_key: string | null;
+          admin_pack: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -162,7 +174,7 @@ export type Database = {
           depends_on_task_id?: string | null;
           claimed_by?: string | null;
           reminder_sent_on?: string | null;
-          pack_key?: string | null;
+          admin_pack?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -179,7 +191,7 @@ export type Database = {
           depends_on_task_id?: string | null;
           claimed_by?: string | null;
           reminder_sent_on?: string | null;
-          pack_key?: string | null;
+          admin_pack?: string | null;
           created_at?: string;
           updated_at?: string;
         };

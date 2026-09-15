@@ -17,7 +17,7 @@ const issueSchema = z.object({
 
 function revalidateMoveDay(moveId: string) {
   revalidatePath(`/moves/${moveId}`);
-  revalidatePath(`/moves/${moveId}/runbook`);
+  revalidatePath(`/moves/${moveId}/move-day`);
 }
 
 export async function logMoveIssue(

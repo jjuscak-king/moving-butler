@@ -1,11 +1,12 @@
 import type { StageKey } from "@/lib/constants";
 
+/** WEEK3-PRD-v0 pack ids, hub order. */
 export const ADMIN_PACK_KEYS = [
-  "building",
-  "change_of_address",
+  "coa",
   "utilities",
   "internet",
   "insurance",
+  "building",
 ] as const;
 
 export type AdminPackKey = (typeof ADMIN_PACK_KEYS)[number];
@@ -23,30 +24,12 @@ export type AdminPackMeta = {
   titles: readonly string[];
 };
 
+export const ADMIN_PACK_DISCLAIMER =
+  "Moving Butler is orchestration software, not a filing service. Curated links open official sites so you can complete the work yourself — we do not file change-of-address, utilities, internet, or insurance for you.";
+
 export const ADMIN_PACKS: readonly AdminPackMeta[] = [
   {
-    key: "building",
-    label: "Building & management",
-    blurb: "COI, freight elevator, dock, parking, and who to call at the building.",
-    links: [
-      {
-        label: "NYC DOT parking rules",
-        href: "https://www.nyc.gov/html/dot/html/motorist/parkreg.shtml",
-      },
-    ],
-    titles: [
-      "Request COI if needed",
-      "Book elevator / loading dock",
-      "Read building move rules",
-      "Loading dock reservation notes",
-      "Street parking notes",
-      "Walk-up logistics",
-      "DOT parking permit if needed",
-      "Building super / management contact",
-    ],
-  },
-  {
-    key: "change_of_address",
+    key: "coa",
     label: "Change of address",
     blurb: "USPS forwarding plus the NYC accounts that do not follow mail automatically.",
     links: [
@@ -102,10 +85,36 @@ export const ADMIN_PACKS: readonly AdminPackMeta[] = [
     key: "insurance",
     label: "Insurance",
     blurb: "Renters coverage at the new address and mover valuation — not a marketplace.",
-    links: [],
+    links: [
+      {
+        label: "NY DFS renters insurance",
+        href: "https://www.dfs.ny.gov/consumers/homeowners_renters",
+      },
+    ],
     titles: [
       "Renters insurance at destination",
       "Confirm mover valuation / insurance",
+    ],
+  },
+  {
+    key: "building",
+    label: "Building & management",
+    blurb: "COI, freight elevator, dock, parking, and who to call at the building.",
+    links: [
+      {
+        label: "NYC DOT parking rules",
+        href: "https://www.nyc.gov/html/dot/html/motorist/parkreg.shtml",
+      },
+    ],
+    titles: [
+      "Request COI if needed",
+      "Book elevator / loading dock",
+      "Read building move rules",
+      "Loading dock reservation notes",
+      "Street parking notes",
+      "Walk-up logistics",
+      "DOT parking permit if needed",
+      "Building super / management contact",
     ],
   },
 ] as const;
@@ -129,13 +138,25 @@ export function isAdminPackKey(value: string | null | undefined): value is Admin
   return !!value && ADMIN_PACK_KEYS.includes(value as AdminPackKey);
 }
 
-export function packKeyForTask(task: {
+/** Normalize stored tags from the draft Week 3 column (`change_of_address` → `coa`). */
+export function normalizeAdminPack(value: string | null | undefined): AdminPackKey | null {
+  if (!value) return null;
+  if (value === "change_of_address") return "coa";
+  return isAdminPackKey(value) ? value : null;
+}
+
+export function adminPackForTask(task: {
+  admin_pack?: string | null;
   pack_key?: string | null;
   title: string;
   stage_key?: StageKey;
 }): AdminPackKey | null {
-  if (isAdminPackKey(task.pack_key)) return task.pack_key;
-  return TITLE_TO_PACK[task.title] ?? null;
+  return (
+    normalizeAdminPack(task.admin_pack) ??
+    normalizeAdminPack(task.pack_key) ??
+    TITLE_TO_PACK[task.title] ??
+    null
+  );
 }
 
 export function packProgress(

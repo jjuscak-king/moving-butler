@@ -95,9 +95,13 @@ describe("Week 2 schema", () => {
 });
 
 describe("Week 3 schema", () => {
-  it("adds Admin pack keys, key contacts, and the issue log", () => {
-    assert.match(sql, /pack_key text/);
-    assert.match(sql, /key_contacts text/);
+  it("adds Admin pack tags, building note fields, and the issue log", () => {
+    assert.match(sql, /admin_pack text/);
+    assert.match(sql, /mgmt_name text/);
+    assert.match(sql, /mgmt_phone text/);
+    assert.match(sql, /elevator_window_notes text/);
+    assert.match(sql, /loading_dock_notes text/);
+    assert.match(sql, /coi_status_notes text/);
     assert.match(sql, /create table if not exists public\.move_issues/);
     assert.match(sql, /move_issues_insert_member/);
   });
@@ -115,7 +119,7 @@ describe("Week 3 schema", () => {
     ]) {
       assert.ok(sql.includes(title), `missing Week 3 seed title: ${title}`);
     }
-    assert.match(sql, /'change_of_address'/);
+    assert.match(sql, /'coa'/);
     assert.match(sql, /'utilities'/);
     assert.match(sql, /'internet'/);
     assert.match(sql, /'insurance'/);

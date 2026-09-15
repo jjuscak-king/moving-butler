@@ -39,8 +39,8 @@ function contactDisplayLines(text) {
     });
 }
 
-function packKeyForTask(task, titleMap) {
-  if (task.pack_key && titleMap[task.pack_key]) return task.pack_key;
+function adminPackForTask(task, titleMap) {
+  if (task.admin_pack && titleMap[task.admin_pack]) return task.admin_pack;
   return titleMap[task.title] ?? null;
 }
 
@@ -66,19 +66,19 @@ describe("runbook contacts", () => {
 });
 
 describe("admin pack grouping", () => {
-  it("prefers pack_key then falls back to title", () => {
+  it("prefers admin_pack then falls back to title", () => {
     const titles = {
       "Request COI if needed": "building",
       building: true,
     };
     assert.equal(
-      packKeyForTask({ pack_key: "building", title: "Custom" }, titles),
+      adminPackForTask({ admin_pack: "building", title: "Custom" }, titles),
       "building"
     );
     assert.equal(
-      packKeyForTask({ pack_key: null, title: "Request COI if needed" }, titles),
+      adminPackForTask({ admin_pack: null, title: "Request COI if needed" }, titles),
       "building"
     );
-    assert.equal(packKeyForTask({ pack_key: null, title: "Custom note" }, titles), null);
+    assert.equal(adminPackForTask({ admin_pack: null, title: "Custom note" }, titles), null);
   });
 });

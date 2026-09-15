@@ -66,7 +66,7 @@ Then paste `supabase/migrations/0002_week2.sql` → Run.
 
 Then paste `supabase/migrations/0003_week3.sql` → Run.
 
-`0001` creates `profiles`, `moves`, `move_stages`, `tasks`, RLS, and the seed trigger. `0002` adds due dates, simple `depends_on`, move membership / invite links, and extends the NYC constraint pack (COI, elevator, loading dock, parking). `0003` adds Admin pack keys, key contacts, the Move-day issue log, and owner remove-co-mover. Existing Case Files are backfilled.
+`0001` creates `profiles`, `moves`, `move_stages`, `tasks`, RLS, and the seed trigger. `0002` adds due dates, simple `depends_on`, move membership / invite links, and extends the NYC constraint pack (COI, elevator, loading dock, parking). `0003` adds Admin pack tags (`admin_pack`), structured building notes, the Move-day issue log, and owner remove-co-mover. Existing Case Files are backfilled.
 
 Optional CLI (if you use the Supabase CLI against this project):
 
@@ -156,12 +156,13 @@ On Vercel, `vercel.json` registers a daily GET to that path. Set the same `CRON_
 
 ## What Week 3 includes
 
-- **Admin packs** on the Admin stage: Building & management, Change of address, Utilities, Internet, Insurance. Seeded NYC tasks plus curated official links (USPS, Con Ed, NYC 311, etc.). Not a marketplace.
-- Admin tasks keep Todo / In progress / **Blocked** / **Done**. Pack rows have large Done and Blocked buttons and a clear left-edge state.
-- **Building / management notes** stay on the Case File and are shown on Admin and Move day (empty state prompts the owner to add them). Optional **key contacts** (one per line) become tap-to-call on the runbook.
-- **Move-day runbook** at `/moves/[id]/runbook` — a single phone-width screen: addresses, key contacts, access notes, payment reminder, issue log.
-- **Lightweight SOS**: log a move-day issue, get static suggested next steps, keep an issue log. No agent.
-- Owner can **revoke** an open invite and **remove** a co-mover (claimed tasks are released). NYC banner chips deep-link to the Admin building pack.
+Aligned to locked **WEEK3-PRD-v0**.
+
+- **Admin packs (A1–A5)** — Hub of five packs (`coa`, `utilities`, `internet`, `insurance`, `building`) with **done/total**. Pack detail lists tasks. Curated links use `target="_blank" rel="noopener"` plus a software-not-filing disclaimer. Pre-Week 3 Case Files are backfilled with an `admin_pack` tag (title heuristic if the tag is missing). Done / Blocked stay first-class on pack tasks.
+- **Building notes (B1–B3)** — Keep `building_notes`. Nullable `mgmt_name`, `mgmt_phone`, `elevator_window_notes`, `loading_dock_notes`, `coi_status_notes`. Owner edits on the Case File; co-movers view. Surfaced on Move day.
+- **Move-day runbook** at `/moves/[id]/move-day` — single phone-width (~375px) screen: contacts, access notes, payment reminder, issue log.
+- **Lightweight SOS**: log a move-day issue, get static suggested next steps. No agent.
+- Owner can **revoke** an open invite and **remove** a co-mover. NYC banner chips deep-link to `?stage=admin&pack=building`.
 
 ## Out of scope (not in this repo)
 
@@ -179,4 +180,4 @@ Vendor capture or marketplace, Week 4 paywall, native apps, OAuth, push notifica
 | `tasks` | select/insert/update: members; delete: owner |
 | `move_issues` | select/insert: members |
 
-`tasks.due_date` is optional. `tasks.depends_on_task_id` is a single same-Case-File dependency. `tasks.pack_key` groups Admin work. `moves.key_contacts` is optional runbook copy. Table names stay `moves*` (URLs `/moves`); the product noun is Relocation Case File.
+`tasks.due_date` is optional. `tasks.depends_on_task_id` is a single same-Case-File dependency. `tasks.admin_pack` tags Admin hub work (`coa` | `utilities` | `internet` | `insurance` | `building`). Building notes keep `building_notes` plus nullable `mgmt_name`, `mgmt_phone`, `elevator_window_notes`, `loading_dock_notes`, `coi_status_notes`. Table names stay `moves*` (URLs `/moves`); the product noun is Relocation Case File.

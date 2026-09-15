@@ -23,7 +23,11 @@ export const moveFormSchema = z
     service_mode: z.enum(SERVICE_MODES, { message: "Choose DIY vs full-service." }),
     budget_notes: z.string().trim().optional(),
     building_notes: z.string().trim().optional(),
-    key_contacts: z.string().trim().optional(),
+    mgmt_name: z.string().trim().optional(),
+    mgmt_phone: z.string().trim().optional(),
+    elevator_window_notes: z.string().trim().optional(),
+    loading_dock_notes: z.string().trim().optional(),
+    coi_status_notes: z.string().trim().optional(),
   })
   .refine((value) => value.window_end >= value.window_start, {
     message: "Move date window end must be on or after start.",
@@ -53,7 +57,11 @@ export function parseMoveForm(formData: FormData) {
     service_mode: readString(formData, "service_mode"),
     budget_notes: readString(formData, "budget_notes") || undefined,
     building_notes: readString(formData, "building_notes") || undefined,
-    key_contacts: readString(formData, "key_contacts") || undefined,
+    mgmt_name: readString(formData, "mgmt_name") || undefined,
+    mgmt_phone: readString(formData, "mgmt_phone") || undefined,
+    elevator_window_notes: readString(formData, "elevator_window_notes") || undefined,
+    loading_dock_notes: readString(formData, "loading_dock_notes") || undefined,
+    coi_status_notes: readString(formData, "coi_status_notes") || undefined,
   });
 }
 
