@@ -7,11 +7,14 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { updateStageStatus } from "@/app/actions/stages";
-import { claimTask, deleteTask, unclaimTask, updateTaskStatus } from "@/app/actions/tasks";
+import { deleteTask, updateTaskStatus } from "@/app/actions/tasks";
+import { AdminPacks } from "@/components/admin-packs";
+import { BuildingNotesCard } from "@/components/building-notes-card";
 import { DeleteMoveButton } from "@/components/delete-move-button";
 import { NativeSelect } from "@/components/field";
 import { HouseholdPanel } from "@/components/household-panel";
 import { NycConstraintBanner } from "@/components/nyc-constraint-banner";
+import { TaskCard } from "@/components/task-card";
 import { TaskDialog } from "@/components/task-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,29 +37,22 @@ import {
   STAGE_META,
   STAGE_STATUS_LABELS,
   STAGE_STATUSES,
-  TASK_STATUS_LABELS,
-  TASK_STATUSES,
   type StageKey,
   type StageStatus,
   type TaskStatus,
 } from "@/lib/constants";
-import type { MoveMemberRow, MoveRow, MoveStageRow, TaskRow } from "@/lib/database.types";
-import { formatMoveDate, formatMoveWindow } from "@/lib/format";
-import {
-  dependencyTitle,
-  isDueToday,
-  isTaskOverdue,
-  isTaskSoftBlocked,
-} from "@/lib/task-state";
+import type {
+  MoveInviteRow,
+  MoveMemberRow,
+  MoveRow,
+  MoveStageRow,
+  TaskRow,
+} from "@/lib/database.types";
+import { formatMoveWindow } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function isStageKey(value: string | undefined): value is StageKey {
   return !!value && STAGE_KEYS.includes(value as StageKey);
-}
-
-function memberLabel(userId: string | null, members: MoveMemberRow[]) {
-  if (!userId) return null;
-  return members.find((member) => member.user_id === userId)?.email ?? "Co-mover";
 }
 
 export function MoveWorkspace({
@@ -64,19 +60,23 @@ export function MoveWorkspace({
   stages,
   tasks,
   members,
+  invites,
   currentUserId,
   isOwner,
   remindersEnabled,
   initialStage,
+  initialPack,
 }: {
   move: MoveRow;
   stages: MoveStageRow[];
   tasks: TaskRow[];
   members: MoveMemberRow[];
+  invites: MoveInviteRow[];
   currentUserId: string;
   isOwner: boolean;
   remindersEnabled: boolean;
   initialStage?: string;
+  initialPack?: string;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<StageKey>(
@@ -103,7 +103,15 @@ export function MoveWorkspace({
 
   function focusStage(key: StageKey) {
     setSelected(key);
-    router.replace(`/moves/${move.id}?stage=${key}`, { scroll: false });
+    const packQuery = key === "admin" && initialPack ? `&pack=${initialPack}` : "";
+    router.replace(`/moves/${move.id}?stage=${key}${packQuery}`, { scroll: false });
+  }
+
+  function onStatus(taskId: string, status: TaskStatus) {
+    startTransition(async () => {
+      const result = await updateTaskStatus(move.id, taskId, status);
+      if (result.error) toast.error(result.error);
+    });
   }
 
   return (
@@ -130,10 +138,26 @@ export function MoveWorkspace({
               >
                 Edit {CASE_FILE_LABEL_SHORT}
               </Button>
+              <Button
+                nativeButton={false}
+                className="h-10"
+                render={<Link href={`/moves/${move.id}/runbook`} />}
+              >
+                Move-day runbook
+              </Button>
               <DeleteMoveButton moveId={move.id} label={move.label} />
             </div>
           ) : (
-            <Badge variant="secondary">Co-mover</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">Co-mover</Badge>
+              <Button
+                nativeButton={false}
+                className="h-10"
+                render={<Link href={`/moves/${move.id}/runbook`} />}
+              >
+                Move-day runbook
+              </Button>
+            </div>
           )}
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
@@ -146,12 +170,18 @@ export function MoveWorkspace({
             {move.coi_required ? "COI required" : "COI not marked"}
           </Badge>
         </div>
-        {move.building_notes || move.budget_notes ? (
+        {move.building_notes || move.budget_notes || move.key_contacts ? (
           <div className="grid gap-2 rounded-xl bg-card p-4 text-sm ring-1 ring-foreground/10">
             {move.building_notes ? (
               <p>
                 <span className="font-medium">Building: </span>
                 {move.building_notes}
+              </p>
+            ) : null}
+            {move.key_contacts ? (
+              <p className="whitespace-pre-wrap">
+                <span className="font-medium">Key contacts: </span>
+                {move.key_contacts}
               </p>
             ) : null}
             {move.budget_notes ? (
@@ -169,6 +199,7 @@ export function MoveWorkspace({
       <HouseholdPanel
         moveId={move.id}
         members={members}
+        invites={invites}
         isOwner={isOwner}
         remindersEnabled={remindersEnabled}
       />
@@ -251,140 +282,93 @@ export function MoveWorkspace({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-medium">Checklist</h3>
-          <Button
-            className="h-10"
-            onClick={() => {
+        {selected === "admin" || selected === "move_day" ? (
+          <BuildingNotesCard move={move} isOwner={isOwner} />
+        ) : null}
+
+        {selected === "move_day" ? (
+          <div className="grid gap-3 rounded-xl border border-primary/20 bg-background p-4">
+            <div>
+              <h3 className="font-heading text-xl">Move-day runbook</h3>
+              <p className="text-sm text-muted-foreground">
+                Single phone screen: key contacts, access notes, payment reminder,
+                and SOS issue log.
+              </p>
+            </div>
+            <Button
+              nativeButton={false}
+              className="h-11 w-full sm:w-auto"
+              render={<Link href={`/moves/${move.id}/runbook`} />}
+            >
+              Open phone runbook
+            </Button>
+          </div>
+        ) : null}
+
+        {selected === "admin" ? (
+          <AdminPacks
+            tasks={focusedTasks}
+            allTasks={tasks}
+            members={members}
+            currentUserId={currentUserId}
+            isOwner={isOwner}
+            pending={pending}
+            highlightPack={initialPack}
+            onAdd={() => {
               setEditing(null);
               setTaskOpen(true);
             }}
-          >
-            <Plus data-icon="inline-start" />
-            Add task
-          </Button>
-        </div>
-
-        {focusedTasks.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">
-            No tasks in this stage yet.
-          </p>
+            onEdit={(task) => {
+              setEditing(task);
+              setTaskOpen(true);
+            }}
+            onDelete={isOwner ? setPendingDelete : undefined}
+            onStatus={onStatus}
+          />
         ) : (
-          <ul className="grid gap-2">
-            {focusedTasks.map((task) => {
-              const waitingOn = isTaskSoftBlocked(task.depends_on_task_id, tasks);
-              const overdue = isTaskOverdue(task.due_date, task.status);
-              const dueToday = isDueToday(task.due_date, task.status);
-              const claimedLabel = memberLabel(task.claimed_by, members);
-              const claimedByMe = task.claimed_by === currentUserId;
-              return (
-                <li
-                  key={task.id}
-                  className={cn(
-                    "rounded-xl border bg-background p-3",
-                    (task.status === "blocked" || waitingOn) &&
-                      "border-amber-400 bg-amber-50 shadow-[inset_4px_0_0_0_rgb(245_158_11)]",
-                    overdue && "border-destructive/40"
-                  )}
-                >
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium leading-snug">{task.title}</p>
-                        {task.notes ? (
-                          <p className="mt-1 text-sm text-muted-foreground">{task.notes}</p>
-                        ) : null}
-                        {waitingOn ? (
-                          <p className="mt-1 text-sm text-amber-800">
-                            Blocked by “{dependencyTitle(task.depends_on_task_id, tasks) ?? "another task"}”
-                          </p>
-                        ) : null}
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {task.due_date ? `Due ${formatMoveDate(task.due_date)}` : "No due date"}
-                          {claimedLabel ? ` · Claimed by ${claimedByMe ? "you" : claimedLabel}` : " · Unclaimed"}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        {task.is_optional ? <Badge variant="outline">Optional</Badge> : null}
-                        {overdue ? <Badge variant="destructive">Overdue</Badge> : null}
-                        {dueToday ? <Badge variant="secondary">Due today</Badge> : null}
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                      <NativeSelect
-                        aria-label={`Status for ${task.title}`}
-                        value={task.status}
-                        className="sm:max-w-44"
-                        onChange={(event) => {
-                          const status = event.target.value as TaskStatus;
-                          if (!TASK_STATUSES.includes(status)) return;
-                          startTransition(async () => {
-                            const result = await updateTaskStatus(move.id, task.id, status);
-                            if (result.error) toast.error(result.error);
-                          });
-                        }}
-                      >
-                        {TASK_STATUSES.map((status) => (
-                          <option key={status} value={status}>
-                            {TASK_STATUS_LABELS[status]}
-                          </option>
-                        ))}
-                      </NativeSelect>
-                      <div className="flex flex-wrap gap-2">
-                        {claimedByMe ? (
-                          <Button
-                            variant="outline"
-                            className="h-11 flex-1 sm:h-10 sm:flex-none"
-                            onClick={() => {
-                              startTransition(async () => {
-                                const result = await unclaimTask(move.id, task.id);
-                                if (result.error) toast.error(result.error);
-                              });
-                            }}
-                          >
-                            Release
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            className="h-11 flex-1 sm:h-10 sm:flex-none"
-                            onClick={() => {
-                              startTransition(async () => {
-                                const result = await claimTask(move.id, task.id);
-                                if (result.error) toast.error(result.error);
-                                else toast.success("Task claimed");
-                              });
-                            }}
-                          >
-                            Claim
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          className="h-11 flex-1 sm:h-10 sm:flex-none"
-                          onClick={() => {
-                            setEditing(task);
-                            setTaskOpen(true);
-                          }}
-                        >
-                          Edit
-                        </Button>
-                        {isOwner ? (
-                          <Button
-                            variant="destructive"
-                            className="h-11 flex-1 sm:h-10 sm:flex-none"
-                            onClick={() => setPendingDelete(task)}
-                          >
-                            Delete
-                          </Button>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-medium">
+                {selected === "move_day" ? "Move-day checklist" : "Checklist"}
+              </h3>
+              <Button
+                className="h-10"
+                onClick={() => {
+                  setEditing(null);
+                  setTaskOpen(true);
+                }}
+              >
+                <Plus data-icon="inline-start" />
+                Add task
+              </Button>
+            </div>
+
+            {focusedTasks.length === 0 ? (
+              <p className="rounded-lg border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">
+                No tasks in this stage yet.
+              </p>
+            ) : (
+              <ul className="grid gap-2">
+                {focusedTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    tasks={tasks}
+                    members={members}
+                    currentUserId={currentUserId}
+                    isOwner={isOwner}
+                    pending={pending}
+                    onEdit={(row) => {
+                      setEditing(row);
+                      setTaskOpen(true);
+                    }}
+                    onDelete={isOwner ? setPendingDelete : undefined}
+                    onStatus={onStatus}
+                  />
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </section>
 

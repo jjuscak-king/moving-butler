@@ -93,3 +93,37 @@ describe("Week 2 schema", () => {
     assert.match(sql, /move_invites_insert_owner/);
   });
 });
+
+describe("Week 3 schema", () => {
+  it("adds Admin pack keys, key contacts, and the issue log", () => {
+    assert.match(sql, /pack_key text/);
+    assert.match(sql, /key_contacts text/);
+    assert.match(sql, /create table if not exists public\.move_issues/);
+    assert.match(sql, /move_issues_insert_member/);
+  });
+
+  it("seeds change-of-address, utilities, internet, and insurance pack titles", () => {
+    for (const title of [
+      "NYC.gov / 311 address",
+      "Banks, payroll, and subscriptions",
+      "NY DMV / ID address",
+      "National Grid gas if applicable",
+      "NYC DEP water/sewer",
+      "Confirm internet install window",
+      "Renters insurance at destination",
+      "Confirm mover valuation / insurance",
+    ]) {
+      assert.ok(sql.includes(title), `missing Week 3 seed title: ${title}`);
+    }
+    assert.match(sql, /'change_of_address'/);
+    assert.match(sql, /'utilities'/);
+    assert.match(sql, /'internet'/);
+    assert.match(sql, /'insurance'/);
+    assert.match(sql, /'building'/);
+  });
+
+  it("lets the owner delete a co-mover membership", () => {
+    assert.match(sql, /move_members_delete_owner/);
+    assert.match(sql, /role <> 'owner'/);
+  });
+});

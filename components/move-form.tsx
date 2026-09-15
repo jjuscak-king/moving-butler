@@ -264,8 +264,9 @@ export function MoveForm({ move }: { move?: MoveRow }) {
         />
       </Field>
       <Field
-        label="Building notes (optional)"
+        label="Building / management notes (optional)"
         htmlFor="building_notes"
+        hint="Freight hours, walk-up flights, COI email, padding rules. Shown on Admin and the Move-day runbook."
         error={state.fieldErrors?.building_notes?.[0]}
       >
         <Textarea
@@ -273,6 +274,19 @@ export function MoveForm({ move }: { move?: MoveRow }) {
           name="building_notes"
           defaultValue={move?.building_notes ?? ""}
           placeholder="Super name, freight hours, walk-up flights, COI email…"
+        />
+      </Field>
+      <Field
+        label="Key contacts (optional)"
+        htmlFor="key_contacts"
+        hint="One per line. Phone numbers become tap-to-call on the Move-day runbook."
+        error={state.fieldErrors?.key_contacts?.[0]}
+      >
+        <Textarea
+          id="key_contacts"
+          name="key_contacts"
+          defaultValue={move?.key_contacts ?? ""}
+          placeholder={"Super — (212) 555-0100\nManagement — (212) 555-0199\nCrew lead — (917) 555-0142"}
         />
       </Field>
 

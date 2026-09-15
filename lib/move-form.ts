@@ -23,6 +23,7 @@ export const moveFormSchema = z
     service_mode: z.enum(SERVICE_MODES, { message: "Choose DIY vs full-service." }),
     budget_notes: z.string().trim().optional(),
     building_notes: z.string().trim().optional(),
+    key_contacts: z.string().trim().optional(),
   })
   .refine((value) => value.window_end >= value.window_start, {
     message: "Move date window end must be on or after start.",
@@ -52,6 +53,7 @@ export function parseMoveForm(formData: FormData) {
     service_mode: readString(formData, "service_mode"),
     budget_notes: readString(formData, "budget_notes") || undefined,
     building_notes: readString(formData, "building_notes") || undefined,
+    key_contacts: readString(formData, "key_contacts") || undefined,
   });
 }
 

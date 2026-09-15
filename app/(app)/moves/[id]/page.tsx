@@ -20,22 +20,28 @@ export default async function MoveDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ stage?: string }>;
+  searchParams: Promise<{ stage?: string; pack?: string }>;
 }) {
   const { id } = await params;
-  const { stage } = await searchParams;
+  const { stage, pack } = await searchParams;
   const { supabase, user } = await requireUser();
 
   const { data: move } = await supabase.from("moves").select("*").eq("id", id).maybeSingle();
   if (!move) notFound();
 
-  const [{ data: stages }, { data: tasks }, { data: members }, { data: profile }] =
-    await Promise.all([
-      supabase.from("move_stages").select("*").eq("move_id", id).order("sort_order"),
-      supabase.from("tasks").select("*").eq("move_id", id).order("sort_order"),
-      supabase.from("move_members").select("*").eq("move_id", id).order("created_at"),
-      supabase.from("profiles").select("reminders_enabled").eq("id", user.id).maybeSingle(),
-    ]);
+  const [
+    { data: stages },
+    { data: tasks },
+    { data: members },
+    { data: invites },
+    { data: profile },
+  ] = await Promise.all([
+    supabase.from("move_stages").select("*").eq("move_id", id).order("sort_order"),
+    supabase.from("tasks").select("*").eq("move_id", id).order("sort_order"),
+    supabase.from("move_members").select("*").eq("move_id", id).order("created_at"),
+    supabase.from("move_invites").select("*").eq("move_id", id).order("created_at", { ascending: false }),
+    supabase.from("profiles").select("reminders_enabled").eq("id", user.id).maybeSingle(),
+  ]);
 
   const initialStage = STAGE_KEYS.includes(stage as (typeof STAGE_KEYS)[number])
     ? stage
@@ -47,10 +53,12 @@ export default async function MoveDetailPage({
       stages={stages ?? []}
       tasks={tasks ?? []}
       members={members ?? []}
+      invites={invites ?? []}
       currentUserId={user.id}
       isOwner={move.user_id === user.id}
       remindersEnabled={profile?.reminders_enabled ?? true}
       initialStage={initialStage}
+      initialPack={pack}
     />
   );
 }

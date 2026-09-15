@@ -4,30 +4,47 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { updateReminderPref } from "@/app/actions/profile";
-import { createMoveInvite } from "@/app/actions/invites";
+import {
+  createMoveInvite,
+  removeMoveMember,
+  revokeMoveInvite,
+} from "@/app/actions/invites";
 import { runMoveDueReminders } from "@/app/actions/reminders";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   CASE_FILE_LABEL,
   CASE_FILE_LABEL_SHORT,
   MEMBER_ROLE_LABELS,
   type MemberRole,
 } from "@/lib/constants";
-import type { MoveMemberRow } from "@/lib/database.types";
+import type { MoveInviteRow, MoveMemberRow } from "@/lib/database.types";
 
 export function HouseholdPanel({
   moveId,
   members,
+  invites,
   isOwner,
   remindersEnabled,
 }: {
   moveId: string;
   members: MoveMemberRow[];
+  invites: MoveInviteRow[];
   isOwner: boolean;
   remindersEnabled: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<MoveMemberRow | null>(null);
+
+  const openInvites = invites.filter((invite) => !invite.revoked_at);
 
   return (
     <section className="grid gap-3 rounded-2xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5">
@@ -47,12 +64,60 @@ export function HouseholdPanel({
             <span className="min-w-0 truncate">
               {member.email || "Signed-in member"}
             </span>
-            <span className="shrink-0 text-xs text-muted-foreground">
-              {MEMBER_ROLE_LABELS[member.role as MemberRole] ?? member.role}
+            <span className="flex shrink-0 items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {MEMBER_ROLE_LABELS[member.role as MemberRole] ?? member.role}
+              </span>
+              {isOwner && member.role !== "owner" ? (
+                <Button
+                  variant="outline"
+                  className="h-10"
+                  disabled={pending}
+                  onClick={() => setPendingRemove(member)}
+                >
+                  Remove
+                </Button>
+              ) : null}
             </span>
           </li>
         ))}
       </ul>
+      {isOwner && openInvites.length ? (
+        <ul className="grid gap-2">
+          {openInvites.map((invite) => (
+            <li
+              key={invite.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed bg-background px-3 py-2 text-sm"
+            >
+              <span className="text-muted-foreground">
+                Open invite · expires{" "}
+                {new Date(invite.expires_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  timeZone: "America/New_York",
+                })}
+              </span>
+              <Button
+                variant="outline"
+                className="h-10"
+                disabled={pending}
+                onClick={() => {
+                  startTransition(async () => {
+                    const result = await revokeMoveInvite(moveId, invite.id);
+                    if (result.error) toast.error(result.error);
+                    else {
+                      setInviteUrl(null);
+                      toast.success("Invite revoked");
+                    }
+                  });
+                }}
+              >
+                Revoke invite
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {isOwner ? (
         <div className="grid gap-2 sm:flex sm:flex-wrap">
           <Button
@@ -131,6 +196,43 @@ export function HouseholdPanel({
       {inviteUrl ? (
         <p className="break-all rounded-lg bg-muted px-3 py-2 text-xs">{inviteUrl}</p>
       ) : null}
+
+      <Dialog open={!!pendingRemove} onOpenChange={(open) => !open && setPendingRemove(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove this co-mover?</DialogTitle>
+            <DialogDescription>
+              {pendingRemove
+                ? `${pendingRemove.email || "This member"} will lose access to the ${CASE_FILE_LABEL_SHORT}. Their claimed tasks will be released.`
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" className="h-10" onClick={() => setPendingRemove(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="h-10"
+              disabled={pending}
+              onClick={() => {
+                if (!pendingRemove) return;
+                startTransition(async () => {
+                  const result = await removeMoveMember(moveId, pendingRemove.id);
+                  if (result.error) {
+                    toast.error(result.error);
+                    return;
+                  }
+                  toast.success("Co-mover removed");
+                  setPendingRemove(null);
+                });
+              }}
+            >
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

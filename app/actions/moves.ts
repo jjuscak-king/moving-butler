@@ -48,6 +48,7 @@ export async function createMove(
       service_mode: values.service_mode,
       budget_notes: values.budget_notes || null,
       building_notes: values.building_notes || null,
+      key_contacts: values.key_contacts || null,
     })
     .select("id")
     .single();
@@ -93,6 +94,7 @@ export async function updateMove(
       service_mode: values.service_mode,
       budget_notes: values.budget_notes || null,
       building_notes: values.building_notes || null,
+      key_contacts: values.key_contacts || null,
     })
     .eq("id", moveId);
 
